@@ -10,7 +10,7 @@ ATEngine is a cross-platform real time rendering engine. The goal of this projec
 - Deferred Shading, SSAO, Directional and Point Light Shadow Mapping, Reflection & Light Probes, etc.
 
 # Design
-![Architecture Design](http://github.com/utaha131/ATEngine/Screenshots/Architecture_Image.png)
+![Architecture Design](https://github.com/utaha131/ATEngine/tree/main/Screenshots/Architecture_Image.png)
 
 # Implementation Status
 | Feature | Description | Status|
@@ -36,11 +36,11 @@ ATEngine is a cross-platform real time rendering engine. The goal of this projec
 | Scene Loading | Saving and Loading Custom Scenes | TODO |
 
 # ScreenShots
-![DirectX 12 & Vulkan Support](https://github.com/utaha131/ATEngine/Screenshots/DX12VK.jpg)
-![Cascaded Shadow Mapping](https://github.com/utaha131/ATEngine/Screenshots/CSM.jpg)
-![Point Light & Shadow Mapping](https://github.com/utaha131/ATEngine/Screenshots/OSM.jpg)
-![Reflection Probe](https://github.com/utaha131/ATEngine/Screenshots/ReflectionProbe.jpg)
-![SSAO](https://github.com/utaha131/ATEngine/Screenshots/SSAO.jpg)
+![DirectX 12 & Vulkan Support](https://github.com/utaha131/ATEngine/tree/main/Screenshots/DX12VK.jpg)
+![Cascaded Shadow Mapping](https://github.com/utaha131/ATEngine/tree/main/Screenshots/CSM.jpg)
+![Point Light & Shadow Mapping](https://github.com/utaha131/ATEngine/tree/main/Screenshots/OSM.jpg)
+![Reflection Probe](https://github.com/utaha131/ATEngine/tree/main/Screenshots/ReflectionProbe.jpg)
+![SSAO](https://github.com/utaha131/ATEngine/tree/main/Screenshots/SSAO.jpg)
 
 # Dependencies
 - [Vulkan](https://www.vulkan.org/)
