@@ -11,7 +11,7 @@ ATEngine is a cross-platform real time rendering engine. The goal of this projec
 
 # Design
 Architecture Design
-![Architecture Design](https://raw.githubusercontent.com/utaha131/ATEngine/main/Screenshots/Architecture_Image.png)
+![Architecture Design](https://raw.githubusercontent.com/utaha131/ATEngine/main/Screenshots/Architecture_Image.jpg)
 
 # Implementation Status
 | Feature | Description | Status|
