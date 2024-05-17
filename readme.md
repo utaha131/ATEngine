@@ -30,11 +30,12 @@ Architecture Design
 | Tone Mapping | Reinhard & ACES Film | Completed |
 | Job System | Multithreaded Job System based on Naughty Dog's presentation. | Completed |
 | Parallel Command List Recording | Multithreaded Rendering. | Completed |
-| SSR | Screen-Space Reflections in Compute Shader. | In Progess |
+| SSR | Screen-Space Reflections. | In Progess |
 | GTAO |  | TODO |
 | Atmospheric Scattering |  | TODO |
 | TAA | Temporal Anti-Aliasing. | TODO |
 | Scene Loading | Saving and Loading Custom Scenes | TODO |
+| Ray-Tracing Pipline | | TODO |
 
 # ScreenShots
 DirectX 12 & Vulkan Support
