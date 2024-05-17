@@ -1,0 +1,1 @@
+This folder contains glsl files used for vulkan before using DXC compiler on hlsl shaders.

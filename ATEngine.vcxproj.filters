@@ -1,0 +1,683 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Systems">
+      <UniqueIdentifier>{d592ec19-c362-4a8d-82bd-edd97f5af141}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Systems\RenderSystem">
+      <UniqueIdentifier>{a45d9d16-18cc-4d7b-8b0d-a82e4af48e00}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Platform">
+      <UniqueIdentifier>{ac272221-d2db-4bee-87a8-4fa23854b640}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Platform\Base">
+      <UniqueIdentifier>{4b7f4770-1c58-489e-b1b7-d1224f0123e2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Platform\Win32">
+      <UniqueIdentifier>{709021b0-9429-4b3f-a5ef-92ecb9d52818}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Platform\Linux">
+      <UniqueIdentifier>{4c5128bc-f376-44b0-a505-3d1521a68039}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Platform\Base\Window">
+      <UniqueIdentifier>{712aba2c-057a-4af7-80eb-77a6ff9080dd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Platform\Win32\Window">
+      <UniqueIdentifier>{927f4085-8e08-487e-a225-e9237a771b37}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Systems\RenderSystem\Shaders">
+      <UniqueIdentifier>{6da5dc43-a625-4be9-8f75-04f44a6f6291}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Systems\RenderSystem\ConstantBuffer">
+      <UniqueIdentifier>{9d6ed72d-9609-4fc3-8f3f-ef1d5dbb53d8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Allocators">
+      <UniqueIdentifier>{70ee5609-606a-44e3-99ee-e4cfb5e312ab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Systems\RenderSystem\FrameGraphBuilder">
+      <UniqueIdentifier>{bfc97bd7-d239-4f2d-b9c1-2535db1ce623}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Systems\RenderSystem\GPUShader">
+      <UniqueIdentifier>{fb2e6c61-b93e-47db-86b2-35ec631ee2b5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Input">
+      <UniqueIdentifier>{5d9d0009-c7c7-41e1-b020-9056e6ddc9dc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Systems\JobSystem">
+      <UniqueIdentifier>{b4171a5e-ad6b-4927-9c51-a36655a3cf35}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RHI">
+      <UniqueIdentifier>{10523c84-236b-4244-9d5a-ffaf6603d86f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RHI\Base">
+      <UniqueIdentifier>{b3ea49ac-eea8-44a1-ac21-3fb79dc42920}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RHI\DirectX12">
+      <UniqueIdentifier>{4a3b6d77-1fca-493c-a481-56619ea302aa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RHI\DirectX12\Adapter">
+      <UniqueIdentifier>{572fbcd4-6e4c-43be-81c2-6403bb36a7e5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RHI\DirectX12\Buffer">
+      <UniqueIdentifier>{b4233b64-9c72-4e88-85c5-254e805bcce2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RHI\DirectX12\CommandAllocator">
+      <UniqueIdentifier>{06db69cd-5c4c-47d5-9a4f-09ef2b63a109}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RHI\DirectX12\CommandList">
+      <UniqueIdentifier>{f32c6860-dc6e-4fd5-88fa-b188e88332a5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RHI\DirectX12\ConstantBufferView">
+      <UniqueIdentifier>{7c11e84b-0ec4-4769-84e5-4d4ec37ed016}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RHI\DirectX12\DepthStencilView">
+      <UniqueIdentifier>{f183fc48-4a73-4141-b62e-878b53e85b8e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RHI\DirectX12\DescriptorHeap">
+      <UniqueIdentifier>{593cde34-665f-4724-92df-e28732993bcf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RHI\DirectX12\Device">
+      <UniqueIdentifier>{432e0fe2-343a-4200-9187-0a0fd84fe1e0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RHI\DirectX12\FrameBuffer">
+      <UniqueIdentifier>{b10ddcd4-ef33-4d90-9340-531926abaf4b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RHI\DirectX12\PipelineState">
+      <UniqueIdentifier>{db76dd67-af85-4504-85f7-28ffc115dc26}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RHI\DirectX12\RenderBackend">
+      <UniqueIdentifier>{05feaf05-0dad-475a-a77a-edc89be66bd3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RHI\DirectX12\RenderTargetView">
+      <UniqueIdentifier>{ff75b481-4efa-46b9-8860-351393426456}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RHI\DirectX12\ResourceHeap">
+      <UniqueIdentifier>{18a13fba-23f4-43c5-9ca1-bdb913c50e3d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RHI\DirectX12\RootSignature">
+      <UniqueIdentifier>{0b8948a5-8f5e-41ae-957f-36f6be7ae388}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RHI\DirectX12\Shader">
+      <UniqueIdentifier>{a00c49a8-af14-49b1-af70-bc8cf9e2e4c6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RHI\DirectX12\ShaderResourceView">
+      <UniqueIdentifier>{e2d6178e-f9aa-4a56-b83f-50f7f8ca721c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RHI\DirectX12\SwapChain">
+      <UniqueIdentifier>{aa0745f4-5a4f-499c-88ee-42c63736a368}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RHI\DirectX12\Texture">
+      <UniqueIdentifier>{3bdd7166-7497-42a8-ac99-d990c75641db}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RHI\DirectX12\UnorderedAccessView">
+      <UniqueIdentifier>{091b4957-7386-4537-9089-533d6bf14a04}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RHI\DirectX12\ViewAllocator">
+      <UniqueIdentifier>{246cee91-ebf0-48be-aa91-af307e646091}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RHI\DirectX12\Sampler">
+      <UniqueIdentifier>{ba317313-3019-406e-a98b-409216d11242}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RHI\Vulkan">
+      <UniqueIdentifier>{de9cb019-e7c8-4350-8f73-d8f65df554da}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RHI\Vulkan\Adapter">
+      <UniqueIdentifier>{a57e64f3-97f2-4c87-98c2-945a9a439bf1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RHI\Vulkan\Buffer">
+      <UniqueIdentifier>{c3677e93-a871-41ff-9a00-4f09bc24533e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RHI\Vulkan\CommandAllocator">
+      <UniqueIdentifier>{7de41a2c-70b9-4283-9ab0-476b7f1d1e73}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RHI\Vulkan\CommandList">
+      <UniqueIdentifier>{b1ba7737-7e4b-43fa-92e7-64a3f37b1690}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RHI\Vulkan\CommandQueue">
+      <UniqueIdentifier>{96656015-2bf4-4767-b911-9ee397efc77a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RHI\Vulkan\ConstantBufferView">
+      <UniqueIdentifier>{dea26353-f795-4681-8c68-bf680b3c6663}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RHI\Vulkan\DepthStencilView">
+      <UniqueIdentifier>{96c36c18-0363-4b66-9ca4-3aff1c1c89da}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RHI\Vulkan\DescriptorHeap">
+      <UniqueIdentifier>{8729016f-ae34-4080-81de-099a79a6d547}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RHI\Vulkan\Device">
+      <UniqueIdentifier>{8063528c-e524-4695-97c6-ab424ce14016}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RHI\Vulkan\FrameBuffer">
+      <UniqueIdentifier>{de2e07bb-561d-4410-ac8c-c98bade0b027}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RHI\Vulkan\PipelineState">
+      <UniqueIdentifier>{2868fc46-e94b-47d5-a028-be9de55863b5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RHI\Vulkan\RenderBackend">
+      <UniqueIdentifier>{9b5c3b32-3a8e-4fb4-8328-a06dadf95bbc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RHI\Vulkan\RenderTargetView">
+      <UniqueIdentifier>{c9efd9ca-bcf1-4a2e-8177-e3d29c94a5a2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RHI\Vulkan\ResourceHeap">
+      <UniqueIdentifier>{af0e0deb-cb0f-4149-831f-56259d599a31}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RHI\Vulkan\RootSignature">
+      <UniqueIdentifier>{3eac2ef5-dd28-45ab-ba5c-134e44e67a5b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RHI\Vulkan\Shader">
+      <UniqueIdentifier>{afc870e5-ceba-4a2e-89e5-206d4b8bd262}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RHI\Vulkan\ShaderResourceView">
+      <UniqueIdentifier>{8f68cefd-5d91-4f11-b1ba-840e8a44d9da}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RHI\Vulkan\SwapChain">
+      <UniqueIdentifier>{acf90e2e-1b37-4561-8dd5-30f437e06018}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RHI\Vulkan\Texture">
+      <UniqueIdentifier>{496d30ba-498c-4907-a1cc-a270c36bfd69}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RHI\Vulkan\UnorderedAccessView">
+      <UniqueIdentifier>{5513fcaa-2f0c-45f0-a5de-f5b9258e3369}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RHI\Vulkan\Sampler">
+      <UniqueIdentifier>{97f97efe-976a-4250-8453-4e1b2c803286}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scene">
+      <UniqueIdentifier>{a17e2ecd-69e0-4da3-b507-221011c580ec}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RHI\DirectX12\Fence">
+      <UniqueIdentifier>{dc33f09f-7f61-49cb-a2c5-e449eea3cf87}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="RHI\Vulkan\Fence">
+      <UniqueIdentifier>{cb5af2da-2410-435e-9338-c6d13121d47c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ResourceManagers">
+      <UniqueIdentifier>{fa569f85-9468-4a5f-ba32-4ae89c63d41d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ResourceManagers\ImageManager">
+      <UniqueIdentifier>{0f4b4138-e2e2-4456-9ebc-471cd04660bc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ResourceManagers\SceneManager">
+      <UniqueIdentifier>{c65e084a-9be7-4deb-8899-c97b9490595b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Systems\RenderSystem\GPUResourceManager">
+      <UniqueIdentifier>{194ff2e0-2fad-4041-a5ed-7e199f198a85}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ResourceManagers\MeshManager">
+      <UniqueIdentifier>{9211cf76-47e2-48ea-919d-57c88da29724}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Systems\RenderSystem\MaterialManager">
+      <UniqueIdentifier>{204573a3-001e-4285-b197-c51e88295271}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Systems\RenderSystem\GPUPipelineStateManager">
+      <UniqueIdentifier>{735f3f1b-3efb-4c73-bf02-6b27b61a9fe7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Systems\RenderSystem\GPUShaderManager">
+      <UniqueIdentifier>{0c293051-5b2a-4cef-8443-c7086870534c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Utils">
+      <UniqueIdentifier>{577b86ec-21c1-48ea-81e2-9dc973d9b3a9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Systems\RenderSystem\GPURootSignatureManager">
+      <UniqueIdentifier>{defd3ef3-6e94-4f53-b42e-fddf513605d2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Systems\RenderSystem\Renderers">
+      <UniqueIdentifier>{08015d3f-7dab-4828-a3fe-7726fdb100cb}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Platform\Win32\Win32Window.cpp">
+      <Filter>Platform\Win32\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="Platform\Linux\LinuxWindow.cpp">
+      <Filter>Platform\Linux</Filter>
+    </ClCompile>
+    <ClCompile Include="Systems\JobSystem\JobSystem.cpp">
+      <Filter>Systems\JobSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="Input\Input.cpp">
+      <Filter>Input</Filter>
+    </ClCompile>
+    <ClCompile Include="RHI\DirectX12\DX12Adapter.cpp">
+      <Filter>RHI\DirectX12\Adapter</Filter>
+    </ClCompile>
+    <ClCompile Include="RHI\DirectX12\DX12Buffer.cpp">
+      <Filter>RHI\DirectX12\Buffer</Filter>
+    </ClCompile>
+    <ClCompile Include="RHI\DirectX12\DX12CommandAllocator.cpp">
+      <Filter>RHI\DirectX12\CommandAllocator</Filter>
+    </ClCompile>
+    <ClCompile Include="RHI\DirectX12\DX12CommandList.cpp">
+      <Filter>RHI\DirectX12\CommandList</Filter>
+    </ClCompile>
+    <ClCompile Include="RHI\DirectX12\DX12DescriptorHeap.cpp">
+      <Filter>RHI\DirectX12\DescriptorHeap</Filter>
+    </ClCompile>
+    <ClCompile Include="RHI\DirectX12\DX12Device.cpp">
+      <Filter>RHI\DirectX12\Device</Filter>
+    </ClCompile>
+    <ClCompile Include="RHI\DirectX12\DX12FrameBuffer.cpp">
+      <Filter>RHI\DirectX12\FrameBuffer</Filter>
+    </ClCompile>
+    <ClCompile Include="RHI\DirectX12\DX12PipelineState.cpp">
+      <Filter>RHI\DirectX12\PipelineState</Filter>
+    </ClCompile>
+    <ClCompile Include="RHI\DirectX12\DX12RenderBackend.cpp">
+      <Filter>RHI\DirectX12\RenderBackend</Filter>
+    </ClCompile>
+    <ClCompile Include="RHI\DirectX12\DX12ResourceHeap.cpp">
+      <Filter>RHI\DirectX12\ResourceHeap</Filter>
+    </ClCompile>
+    <ClCompile Include="RHI\DirectX12\DX12RootSignature.cpp">
+      <Filter>RHI\DirectX12\RootSignature</Filter>
+    </ClCompile>
+    <ClCompile Include="RHI\DirectX12\DX12Shader.cpp">
+      <Filter>RHI\DirectX12\Shader</Filter>
+    </ClCompile>
+    <ClCompile Include="RHI\DirectX12\DX12SwapChain.cpp">
+      <Filter>RHI\DirectX12\SwapChain</Filter>
+    </ClCompile>
+    <ClCompile Include="RHI\DirectX12\DX12Texture.cpp">
+      <Filter>RHI\DirectX12\Texture</Filter>
+    </ClCompile>
+    <ClCompile Include="RHI\DirectX12\DX12ViewAllocator.cpp">
+      <Filter>RHI\DirectX12\ViewAllocator</Filter>
+    </ClCompile>
+    <ClCompile Include="RHI\Vulkan\VKBuffer.cpp">
+      <Filter>RHI\Vulkan\Buffer</Filter>
+    </ClCompile>
+    <ClCompile Include="RHI\Vulkan\VKCommandAllocator.cpp">
+      <Filter>RHI\Vulkan\CommandAllocator</Filter>
+    </ClCompile>
+    <ClCompile Include="RHI\Vulkan\VKCommandList.cpp">
+      <Filter>RHI\Vulkan\CommandList</Filter>
+    </ClCompile>
+    <ClCompile Include="RHI\Vulkan\VKCommandQueue.cpp">
+      <Filter>RHI\Vulkan\CommandQueue</Filter>
+    </ClCompile>
+    <ClCompile Include="RHI\Vulkan\VKDescriptorHeap.cpp">
+      <Filter>RHI\Vulkan\DescriptorHeap</Filter>
+    </ClCompile>
+    <ClCompile Include="RHI\Vulkan\VKDevice.cpp">
+      <Filter>RHI\Vulkan\Device</Filter>
+    </ClCompile>
+    <ClCompile Include="RHI\Vulkan\VKRenderBackend.cpp">
+      <Filter>RHI\Vulkan\RenderBackend</Filter>
+    </ClCompile>
+    <ClCompile Include="RHI\Vulkan\VKResourceHeap.cpp">
+      <Filter>RHI\Vulkan\ResourceHeap</Filter>
+    </ClCompile>
+    <ClCompile Include="RHI\Vulkan\VKSwapChain.cpp">
+      <Filter>RHI\Vulkan\SwapChain</Filter>
+    </ClCompile>
+    <ClCompile Include="Systems\RenderSystem\GPUShaderManager.cpp">
+      <Filter>Systems\RenderSystem\GPUShaderManager</Filter>
+    </ClCompile>
+    <ClCompile Include="Systems\RenderSystem\FrameGraphBuilder.cpp">
+      <Filter>Systems\RenderSystem\FrameGraphBuilder</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Platform\Platform.h">
+      <Filter>Platform</Filter>
+    </ClInclude>
+    <ClInclude Include="Platform\IWindow.h">
+      <Filter>Platform\Base\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="Platform\Win32\Win32Window.h">
+      <Filter>Platform\Win32\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="Platform\Linux\LinuxWindow.h">
+      <Filter>Platform\Linux</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\RenderSystem\RenderTechniques.h">
+      <Filter>Systems\RenderSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\RenderSystem\RenderPass.h">
+      <Filter>Systems\RenderSystem\FrameGraphBuilder</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\RenderSystem\FrameGraphBuilder.h">
+      <Filter>Systems\RenderSystem\FrameGraphBuilder</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\RenderSystem\GPUConstantBuffer.h">
+      <Filter>Systems\RenderSystem\ConstantBuffer</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\RenderSystem\GPUShader.h">
+      <Filter>Systems\RenderSystem\GPUShader</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\RenderSystem\FrameGraphResources.h">
+      <Filter>Systems\RenderSystem\FrameGraphBuilder</Filter>
+    </ClInclude>
+    <ClInclude Include="Allocators\LinearAllocator.h">
+      <Filter>Allocators</Filter>
+    </ClInclude>
+    <ClInclude Include="Input\Input.h">
+      <Filter>Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\JobSystem\JobSystem.h">
+      <Filter>Systems\JobSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\IAdapter.h">
+      <Filter>RHI\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\IBuffer.h">
+      <Filter>RHI\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\ICommandAllocator.h">
+      <Filter>RHI\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\ICommandList.h">
+      <Filter>RHI\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\IConstantBufferView.h">
+      <Filter>RHI\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\IDepthStencilView.h">
+      <Filter>RHI\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\IDescriptorTable.h">
+      <Filter>RHI\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\IDevice.h">
+      <Filter>RHI\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\IFrameBuffer.h">
+      <Filter>RHI\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\IPipelineState.h">
+      <Filter>RHI\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\IRenderBackend.h">
+      <Filter>RHI\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\IRenderPass.h">
+      <Filter>RHI\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\IRenderTargetView.h">
+      <Filter>RHI\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\IResourceHeap.h">
+      <Filter>RHI\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\IRootSignature.h">
+      <Filter>RHI\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\ISampler.h">
+      <Filter>RHI\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\IShader.h">
+      <Filter>RHI\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\IShaderResourceView.h">
+      <Filter>RHI\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\ISwapChain.h">
+      <Filter>RHI\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\ITexture.h">
+      <Filter>RHI\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\IUnorderedAccessView.h">
+      <Filter>RHI\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\RHI.h">
+      <Filter>RHI\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\RHICore.h">
+      <Filter>RHI\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\DirectX12\DX12Graphics.h">
+      <Filter>RHI\DirectX12</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\DirectX12\DX12Adapter.h">
+      <Filter>RHI\DirectX12\Adapter</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\DirectX12\DX12Buffer.h">
+      <Filter>RHI\DirectX12\Buffer</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\DirectX12\DX12CommandAllocator.h">
+      <Filter>RHI\DirectX12\CommandAllocator</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\DirectX12\DX12CommandList.h">
+      <Filter>RHI\DirectX12\CommandList</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\DirectX12\DX12ConstantBufferView.h">
+      <Filter>RHI\DirectX12\ConstantBufferView</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\DirectX12\DX12DepthStencilView.h">
+      <Filter>RHI\DirectX12\DepthStencilView</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\DirectX12\DX12DescriptorHeap.h">
+      <Filter>RHI\DirectX12\DescriptorHeap</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\DirectX12\DX12Device.h">
+      <Filter>RHI\DirectX12\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\DirectX12\DX12FrameBuffer.h">
+      <Filter>RHI\DirectX12\FrameBuffer</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\DirectX12\DX12PipelineState.h">
+      <Filter>RHI\DirectX12\PipelineState</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\DirectX12\DX12RenderBackend.h">
+      <Filter>RHI\DirectX12\RenderBackend</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\DirectX12\DX12RenderTargetView.h">
+      <Filter>RHI\DirectX12\RenderTargetView</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\DirectX12\DX12ResourceHeap.h">
+      <Filter>RHI\DirectX12\ResourceHeap</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\DirectX12\DX12RootSignature.h">
+      <Filter>RHI\DirectX12\RootSignature</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\DirectX12\DX12Shader.h">
+      <Filter>RHI\DirectX12\Shader</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\DirectX12\DX12ShaderResourceView.h">
+      <Filter>RHI\DirectX12\ShaderResourceView</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\DirectX12\DX12SwapChain.h">
+      <Filter>RHI\DirectX12\SwapChain</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\DirectX12\DX12Texture.h">
+      <Filter>RHI\DirectX12\Texture</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\DirectX12\DX12UnorderedAccessView.h">
+      <Filter>RHI\DirectX12\UnorderedAccessView</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\DirectX12\DX12ViewAllocator.h">
+      <Filter>RHI\DirectX12\ViewAllocator</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\DirectX12\DX12Sampler.h">
+      <Filter>RHI\DirectX12\Sampler</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\Vulkan\VKGraphics.h">
+      <Filter>RHI\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\Vulkan\VKAdapter.h">
+      <Filter>RHI\Vulkan\Adapter</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\Vulkan\VKBuffer.h">
+      <Filter>RHI\Vulkan\Buffer</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\Vulkan\VKCommandAllocator.h">
+      <Filter>RHI\Vulkan\CommandAllocator</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\Vulkan\VKCommandList.h">
+      <Filter>RHI\Vulkan\CommandList</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\Vulkan\VKCommandQueue.h">
+      <Filter>RHI\Vulkan\CommandQueue</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\Vulkan\VKConstantBufferView.h">
+      <Filter>RHI\Vulkan\ConstantBufferView</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\Vulkan\VKDepthStencilView.h">
+      <Filter>RHI\Vulkan\DepthStencilView</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\Vulkan\VKDescriptorHeap.h">
+      <Filter>RHI\Vulkan\DescriptorHeap</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\Vulkan\VKDevice.h">
+      <Filter>RHI\Vulkan\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\Vulkan\VKFrameBuffer.h">
+      <Filter>RHI\Vulkan\FrameBuffer</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\Vulkan\VKPipelineState.h">
+      <Filter>RHI\Vulkan\PipelineState</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\Vulkan\VKRenderBackend.h">
+      <Filter>RHI\Vulkan\RenderBackend</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\Vulkan\VKRenderTargetView.h">
+      <Filter>RHI\Vulkan\RenderTargetView</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\Vulkan\VKResourceHeap.h">
+      <Filter>RHI\Vulkan\ResourceHeap</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\Vulkan\VKRootSignature.h">
+      <Filter>RHI\Vulkan\RootSignature</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\Vulkan\VKShader.h">
+      <Filter>RHI\Vulkan\Shader</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\Vulkan\VKShaderResourceView.h">
+      <Filter>RHI\Vulkan\ShaderResourceView</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\Vulkan\VKSwapChain.h">
+      <Filter>RHI\Vulkan\SwapChain</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\Vulkan\VKTexture.h">
+      <Filter>RHI\Vulkan\Texture</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\Vulkan\VKUnorderedAccessView.h">
+      <Filter>RHI\Vulkan\UnorderedAccessView</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\Vulkan\VKSampler.h">
+      <Filter>RHI\Vulkan\Sampler</Filter>
+    </ClInclude>
+    <ClInclude Include="Allocators\FreeListAllocator.h">
+      <Filter>Allocators</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\RenderSystem\FrameGraphRHIResourceAllocator.h">
+      <Filter>Systems\RenderSystem\FrameGraphBuilder</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\IFence.h">
+      <Filter>RHI\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\DirectX12\DX12Fence.h">
+      <Filter>RHI\DirectX12\Fence</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\Vulkan\VKFence.h">
+      <Filter>RHI\Vulkan\Fence</Filter>
+    </ClInclude>
+    <ClInclude Include="ResourceManagers\ImageManager.h">
+      <Filter>ResourceManagers\ImageManager</Filter>
+    </ClInclude>
+    <ClInclude Include="ResourceManagers\SceneManager.h">
+      <Filter>ResourceManagers\SceneManager</Filter>
+    </ClInclude>
+    <ClInclude Include="Scene\Scene.h">
+      <Filter>Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\RenderSystem\GPUResourceManager.h">
+      <Filter>Systems\RenderSystem\GPUResourceManager</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\RenderSystem\RenderSystem.h">
+      <Filter>Systems\RenderSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\RenderSystem\MeshManager.h">
+      <Filter>ResourceManagers\MeshManager</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\RenderSystem\VertexFormats.h">
+      <Filter>Systems\RenderSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\RenderSystem\GPUMemoryAllocator.h">
+      <Filter>Systems\RenderSystem\GPUResourceManager</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\RenderSystem\GPUResources.h">
+      <Filter>Systems\RenderSystem\GPUResourceManager</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\RenderSystem\MaterialManager.h">
+      <Filter>Systems\RenderSystem\MaterialManager</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\RenderSystem\GPUShaderManager.h">
+      <Filter>Systems\RenderSystem\GPUShaderManager</Filter>
+    </ClInclude>
+    <ClInclude Include="Util\HashUtil.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\RenderSystem\ShaderPrograms\CascadedShadowMappingShader.h">
+      <Filter>Systems\RenderSystem\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\RenderSystem\ShaderPrograms\DeferredShader.h">
+      <Filter>Systems\RenderSystem\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\RenderSystem\ShaderPrograms\DepthPrepassShader.h">
+      <Filter>Systems\RenderSystem\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\RenderSystem\ShaderPrograms\EnvBRDFShader.h">
+      <Filter>Systems\RenderSystem\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\RenderSystem\ShaderPrograms\GBufferShader.h">
+      <Filter>Systems\RenderSystem\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\RenderSystem\ShaderPrograms\IrradianceMap.h">
+      <Filter>Systems\RenderSystem\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\RenderSystem\ShaderPrograms\OmnidirectionalShadowMappingShader.h">
+      <Filter>Systems\RenderSystem\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\RenderSystem\ShaderPrograms\PreFilterEnviromentMapShader.h">
+      <Filter>Systems\RenderSystem\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\RenderSystem\ShaderPrograms\SkyboxShader.h">
+      <Filter>Systems\RenderSystem\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\RenderSystem\ShaderPrograms\ScreenSpaceAmbientOcclusionShader.h">
+      <Filter>Systems\RenderSystem\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\RenderSystem\ShaderPrograms\ScreenSpaceAmbientOcclusionBlurShader.h">
+      <Filter>Systems\RenderSystem\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\RenderSystem\ShaderPrograms\ToneMappingShader.h">
+      <Filter>Systems\RenderSystem\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\RenderSystem\GPURootSignatureManager.h">
+      <Filter>Systems\RenderSystem\GPURootSignatureManager</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\RenderSystem\GPUPipelineStateManager.h">
+      <Filter>Systems\RenderSystem\GPUPipelineStateManager</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\RenderSystem\ShaderPrograms\GenerateMipChain2DShader.h">
+      <Filter>Systems\RenderSystem\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\RenderSystem\Renderers\Renderer.h">
+      <Filter>Systems\RenderSystem\Renderers</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\RenderSystem\Renderers\DeferredRenderer.h">
+      <Filter>Systems\RenderSystem\Renderers</Filter>
+    </ClInclude>
+    <ClInclude Include="FrameParameters.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

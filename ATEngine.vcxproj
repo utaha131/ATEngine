@@ -1,0 +1,293 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Input\Input.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="Platform\Linux\LinuxWindow.cpp" />
+    <ClCompile Include="Platform\Win32\Win32Window.cpp" />
+    <ClCompile Include="RHI\DirectX12\DX12Adapter.cpp" />
+    <ClCompile Include="RHI\DirectX12\DX12Buffer.cpp" />
+    <ClCompile Include="RHI\DirectX12\DX12CommandAllocator.cpp" />
+    <ClCompile Include="RHI\DirectX12\DX12CommandList.cpp" />
+    <ClCompile Include="RHI\DirectX12\DX12DescriptorHeap.cpp" />
+    <ClCompile Include="RHI\DirectX12\DX12Device.cpp" />
+    <ClCompile Include="RHI\DirectX12\DX12FrameBuffer.cpp" />
+    <ClCompile Include="RHI\DirectX12\DX12PipelineState.cpp" />
+    <ClCompile Include="RHI\DirectX12\DX12RenderBackend.cpp" />
+    <ClCompile Include="RHI\DirectX12\DX12ResourceHeap.cpp" />
+    <ClCompile Include="RHI\DirectX12\DX12RootSignature.cpp" />
+    <ClCompile Include="RHI\DirectX12\DX12Shader.cpp" />
+    <ClCompile Include="RHI\DirectX12\DX12SwapChain.cpp" />
+    <ClCompile Include="RHI\DirectX12\DX12Texture.cpp" />
+    <ClCompile Include="RHI\DirectX12\DX12ViewAllocator.cpp" />
+    <ClCompile Include="RHI\Vulkan\VKBuffer.cpp" />
+    <ClCompile Include="RHI\Vulkan\VKCommandAllocator.cpp" />
+    <ClCompile Include="RHI\Vulkan\VKCommandList.cpp" />
+    <ClCompile Include="RHI\Vulkan\VKCommandQueue.cpp" />
+    <ClCompile Include="RHI\Vulkan\VKDescriptorHeap.cpp" />
+    <ClCompile Include="RHI\Vulkan\VKDevice.cpp" />
+    <ClCompile Include="RHI\Vulkan\VKRenderBackend.cpp" />
+    <ClCompile Include="RHI\Vulkan\VKResourceHeap.cpp" />
+    <ClCompile Include="RHI\Vulkan\VKSwapChain.cpp" />
+    <ClCompile Include="Systems\JobSystem\JobSystem.cpp" />
+    <ClCompile Include="Systems\RenderSystem\FrameGraphBuilder.cpp" />
+    <ClCompile Include="Systems\RenderSystem\GPUShaderManager.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Allocators\FreeListAllocator.h" />
+    <ClInclude Include="Allocators\LinearAllocator.h" />
+    <ClInclude Include="FrameParameters.h" />
+    <ClInclude Include="Input\Input.h" />
+    <ClInclude Include="Platform\IWindow.h" />
+    <ClInclude Include="Platform\Linux\LinuxWindow.h" />
+    <ClInclude Include="Platform\Platform.h" />
+    <ClInclude Include="Platform\Win32\Win32Window.h" />
+    <ClInclude Include="RenderData.h" />
+    <ClInclude Include="ResourceManagers\ImageManager.h" />
+    <ClInclude Include="ResourceManagers\SceneManager.h" />
+    <ClInclude Include="RHI\DirectX12\DX12Adapter.h" />
+    <ClInclude Include="RHI\DirectX12\DX12Buffer.h" />
+    <ClInclude Include="RHI\DirectX12\DX12CommandAllocator.h" />
+    <ClInclude Include="RHI\DirectX12\DX12CommandList.h" />
+    <ClInclude Include="RHI\DirectX12\DX12ConstantBufferView.h" />
+    <ClInclude Include="RHI\DirectX12\DX12DepthStencilView.h" />
+    <ClInclude Include="RHI\DirectX12\DX12DescriptorHeap.h" />
+    <ClInclude Include="RHI\DirectX12\DX12Device.h" />
+    <ClInclude Include="RHI\DirectX12\DX12Fence.h" />
+    <ClInclude Include="RHI\DirectX12\DX12FrameBuffer.h" />
+    <ClInclude Include="RHI\DirectX12\DX12Graphics.h" />
+    <ClInclude Include="RHI\DirectX12\DX12PipelineState.h" />
+    <ClInclude Include="RHI\DirectX12\DX12RenderBackend.h" />
+    <ClInclude Include="RHI\DirectX12\DX12RenderTargetView.h" />
+    <ClInclude Include="RHI\DirectX12\DX12ResourceHeap.h" />
+    <ClInclude Include="RHI\DirectX12\DX12RootSignature.h" />
+    <ClInclude Include="RHI\DirectX12\DX12Sampler.h" />
+    <ClInclude Include="RHI\DirectX12\DX12Shader.h" />
+    <ClInclude Include="RHI\DirectX12\DX12ShaderResourceView.h" />
+    <ClInclude Include="RHI\DirectX12\DX12SwapChain.h" />
+    <ClInclude Include="RHI\DirectX12\DX12Texture.h" />
+    <ClInclude Include="RHI\DirectX12\DX12UnorderedAccessView.h" />
+    <ClInclude Include="RHI\DirectX12\DX12ViewAllocator.h" />
+    <ClInclude Include="RHI\IAdapter.h" />
+    <ClInclude Include="RHI\IBuffer.h" />
+    <ClInclude Include="RHI\ICommandAllocator.h" />
+    <ClInclude Include="RHI\ICommandList.h" />
+    <ClInclude Include="RHI\IConstantBufferView.h" />
+    <ClInclude Include="RHI\IDepthStencilView.h" />
+    <ClInclude Include="RHI\IDescriptorTable.h" />
+    <ClInclude Include="RHI\IDevice.h" />
+    <ClInclude Include="RHI\IFence.h" />
+    <ClInclude Include="RHI\IFrameBuffer.h" />
+    <ClInclude Include="RHI\IPipelineState.h" />
+    <ClInclude Include="RHI\IRenderBackend.h" />
+    <ClInclude Include="RHI\IRenderPass.h" />
+    <ClInclude Include="RHI\IRenderTargetView.h" />
+    <ClInclude Include="RHI\IResourceHeap.h" />
+    <ClInclude Include="RHI\IRootSignature.h" />
+    <ClInclude Include="RHI\ISampler.h" />
+    <ClInclude Include="RHI\IShader.h" />
+    <ClInclude Include="RHI\IShaderResourceView.h" />
+    <ClInclude Include="RHI\ISwapChain.h" />
+    <ClInclude Include="RHI\ITexture.h" />
+    <ClInclude Include="RHI\IUnorderedAccessView.h" />
+    <ClInclude Include="RHI\RHI.h" />
+    <ClInclude Include="RHI\RHICore.h" />
+    <ClInclude Include="RHI\Vulkan\VKAdapter.h" />
+    <ClInclude Include="RHI\Vulkan\VKBuffer.h" />
+    <ClInclude Include="RHI\Vulkan\VKCommandAllocator.h" />
+    <ClInclude Include="RHI\Vulkan\VKCommandList.h" />
+    <ClInclude Include="RHI\Vulkan\VKCommandQueue.h" />
+    <ClInclude Include="RHI\Vulkan\VKConstantBufferView.h" />
+    <ClInclude Include="RHI\Vulkan\VKDepthStencilView.h" />
+    <ClInclude Include="RHI\Vulkan\VKDescriptorHeap.h" />
+    <ClInclude Include="RHI\Vulkan\VKDevice.h" />
+    <ClInclude Include="RHI\Vulkan\VKFence.h" />
+    <ClInclude Include="RHI\Vulkan\VKFrameBuffer.h" />
+    <ClInclude Include="RHI\Vulkan\VKGraphics.h" />
+    <ClInclude Include="RHI\Vulkan\VKPipelineState.h" />
+    <ClInclude Include="RHI\Vulkan\VKRenderBackend.h" />
+    <ClInclude Include="RHI\Vulkan\VKRenderTargetView.h" />
+    <ClInclude Include="RHI\Vulkan\VKResourceHeap.h" />
+    <ClInclude Include="RHI\Vulkan\VKRootSignature.h" />
+    <ClInclude Include="RHI\Vulkan\VKSampler.h" />
+    <ClInclude Include="RHI\Vulkan\VKShader.h" />
+    <ClInclude Include="RHI\Vulkan\VKShaderResourceView.h" />
+    <ClInclude Include="RHI\Vulkan\VKSwapChain.h" />
+    <ClInclude Include="RHI\Vulkan\VKTexture.h" />
+    <ClInclude Include="RHI\Vulkan\VKUnorderedAccessView.h" />
+    <ClInclude Include="Scene\Scene.h" />
+    <ClInclude Include="Systems\JobSystem\JobSystem.h" />
+    <ClInclude Include="Systems\RenderSystem\FrameGraphBuilder.h" />
+    <ClInclude Include="Systems\RenderSystem\FrameGraphRHIResourceAllocator.h" />
+    <ClInclude Include="Systems\RenderSystem\FrameGraphResources.h" />
+    <ClInclude Include="Systems\RenderSystem\GPUConstantBuffer.h" />
+    <ClInclude Include="Systems\RenderSystem\GPUMemoryAllocator.h" />
+    <ClInclude Include="Systems\RenderSystem\GPUPipelineStateManager.h" />
+    <ClInclude Include="Systems\RenderSystem\GPUResourceManager.h" />
+    <ClInclude Include="Systems\RenderSystem\GPUResources.h" />
+    <ClInclude Include="Systems\RenderSystem\GPURootSignatureManager.h" />
+    <ClInclude Include="Systems\RenderSystem\GPUShader.h" />
+    <ClInclude Include="Systems\RenderSystem\GPUShaderManager.h" />
+    <ClInclude Include="Systems\RenderSystem\MaterialManager.h" />
+    <ClInclude Include="Systems\RenderSystem\MeshManager.h" />
+    <ClInclude Include="Systems\RenderSystem\Renderers\DeferredRenderer.h" />
+    <ClInclude Include="Systems\RenderSystem\Renderers\Renderer.h" />
+    <ClInclude Include="Systems\RenderSystem\RenderPass.h" />
+    <ClInclude Include="Systems\RenderSystem\RenderSystem.h" />
+    <ClInclude Include="Systems\RenderSystem\RenderTechniques.h" />
+    <ClInclude Include="Systems\RenderSystem\ShaderPrograms\CascadedShadowMappingShader.h" />
+    <ClInclude Include="Systems\RenderSystem\ShaderPrograms\DeferredShader.h" />
+    <ClInclude Include="Systems\RenderSystem\ShaderPrograms\DepthPrepassShader.h" />
+    <ClInclude Include="Systems\RenderSystem\ShaderPrograms\EnvBRDFShader.h" />
+    <ClInclude Include="Systems\RenderSystem\ShaderPrograms\GBufferShader.h" />
+    <ClInclude Include="Systems\RenderSystem\ShaderPrograms\GenerateMipChain2DShader.h" />
+    <ClInclude Include="Systems\RenderSystem\ShaderPrograms\IrradianceMap.h" />
+    <ClInclude Include="Systems\RenderSystem\ShaderPrograms\OmnidirectionalShadowMappingShader.h" />
+    <ClInclude Include="Systems\RenderSystem\ShaderPrograms\PreFilterEnviromentMapShader.h" />
+    <ClInclude Include="Systems\RenderSystem\ShaderPrograms\ScreenSpaceAmbientOcclusionBlurShader.h" />
+    <ClInclude Include="Systems\RenderSystem\ShaderPrograms\ScreenSpaceAmbientOcclusionShader.h" />
+    <ClInclude Include="Systems\RenderSystem\ShaderPrograms\SkyboxShader.h" />
+    <ClInclude Include="Systems\RenderSystem\ShaderPrograms\ToneMappingShader.h" />
+    <ClInclude Include="Systems\RenderSystem\VertexFormats.h" />
+    <ClInclude Include="Util\HashUtil.h" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>16.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{2d75cbf7-65b1-4355-933b-f1ecead46a84}</ProjectGuid>
+    <RootNamespace>ATEngine</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0.22000.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>false</ConformanceMode>
+      <AdditionalIncludeDirectories>C:\Users\4cdyl\OneDrive\Desktop\ATEngine\include;C:\VulkanSDK\1.3.275.0\Include;C:\assimp\build\include;C:\assimp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <ShowIncludes>true</ShowIncludes>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>C:\Users\4cdyl\OneDrive\Desktop\ATEngine\x64\Debug;C:\assimp\build\lib\Debug;C:\SDL2\lib\x64;C:\VulkanSDK\1.3.275.0\Lib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>assimp-vc143-mtd.lib;vulkan-1.lib;%(AdditionalDependencies);dxcompiler.lib</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>false</ConformanceMode>
+      <AdditionalIncludeDirectories>C:\Users\4cdyl\OneDrive\Desktop\ATEngine\include;C:\VulkanSDK\1.3.275.0\Include;C:\assimp\build\include;C:\assimp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <ShowIncludes>true</ShowIncludes>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>C:\Users\4cdyl\OneDrive\Desktop\ATEngine\x64\Release;C:\assimp\build\lib\Release;C:\SDL2\lib\x64;C:\VulkanSDK\1.3.275.0\Lib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>assimp-vc143-mt.lib;vulkan-1.lib;%(AdditionalDependencies);dxcompiler.lib</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
