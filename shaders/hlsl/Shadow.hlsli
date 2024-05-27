@@ -14,7 +14,7 @@ inline float CascadedShadowMapFactor(float3 Fragment_Position, float3 Fragment_W
 
 
 	float4 light_space_position = mul(Light_Matrix[map_index], float4(Fragment_World_Position.xyz, 1.0f));
-	float3 uv = light_space_position.xyz / light_space_position.w * 0.5f  + 0.5f;
+	float2 uv = light_space_position.xy / light_space_position.w * 0.5f  + 0.5f;
 	uv.y = 1.0f - uv.y;
 	float texel_size = 1.0f / 4096.0f;
 
@@ -24,7 +24,7 @@ inline float CascadedShadowMapFactor(float3 Fragment_Position, float3 Fragment_W
 		for (int j = -1; j <= 1; ++j) {
 			float depth = Shadow_Map.Sample(g_Sampler, float3(uv.x + (j * texel_size), uv.y + (i * texel_size), map_index)).r;
 			
-			if (test + 0.002f < depth) {
+			if (test + 0.005f < depth) {
 				shadow += 0.0f;
 			} else {
 				shadow += 1.0f;

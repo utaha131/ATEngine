@@ -477,9 +477,9 @@ namespace AT {
 				}
 
 				AT::GenerateMipChain2DShader::Parameters parameters;
-				parameters.compute = new AT::GenerateMipChain2DShader::ComputeGroup{};
-				parameters.compute->constants.IsSRGB = (src_texture->m_RHI->GetDescription().Format == RHI::Format::R8G8B8A8_TYPELESS) ? true : false;
-				parameters.compute->constants.Output_Resolution = { (float)width, (float)height };
+				parameters.Compute = new AT::GenerateMipChain2DShader::ComputeGroup{};
+				parameters.Compute->constants.IsSRGB = (src_texture->m_RHI->GetDescription().Format == RHI::Format::R8G8B8A8_TYPELESS) ? true : false;
+				parameters.Compute->constants.OutputResolution = { (float)width, (float)height };
 				GPUBufferPtr upload_buffer;
 				{
 					RHI::BufferDescription buffer_description;
@@ -488,11 +488,11 @@ namespace AT {
 					upload_buffer = CreateUploadBuffer(buffer_description);
 				}
 
-				parameters.compute->constant_buffer = new AT::GPUConstantBuffer(m_Device, upload_buffer->m_RHI);
+				parameters.Compute->constant_buffer = new AT::GPUConstantBuffer(m_Device, upload_buffer->m_RHI);
 
-				m_Device->AllocateDescriptorTable(m_GenerateMipChainShader->GetRootSignature(), 0, parameters.compute->m_descriptor_table);
-				parameters.compute->Source_Texture.srv = srv;
-				parameters.compute->Output_Texture.uav = uav;
+				m_Device->AllocateDescriptorTable(m_GenerateMipChainShader->GetRootSignature(), 0, parameters.Compute->m_descriptor_table);
+				parameters.Compute->SourceTexture.srv = srv;
+				parameters.Compute->OutputTexture.uav = uav;
 
 				m_ComputeCommandList->SetPipelineState(m_GenerateMipChainPSO);
 				m_ComputeCommandList->SetComputeRootSignature(m_GenerateMipChainShader->GetRootSignature());

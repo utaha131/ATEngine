@@ -11,6 +11,7 @@
 
 namespace AT {
 	struct Camera {
+		float VerticalFOV;
 		DirectX::XMVECTOR Position;
 		DirectX::XMVECTOR Rotation;
 	};
@@ -28,34 +29,16 @@ namespace AT {
 
 		Scene() {
 			m_Lights.push_back(Light{
-				.PositionOrDirection = { 0.0001f, 1.0f, 0.4f, 0.0f },
+				.PositionOrDirection = { 0.0001f, 1.0f, 0.2f, 0.0f },
 				.Type = LIGHT_TYPE_DIRECTIONAL,
 				.Intensity = 30.0f,
 			});
-			/*m_Lights.push_back(Light{
-				.PositionOrDirection = { 8.0f, 1.0f, 0.0f, 1.0f },
+			m_Lights.push_back(Light{
+				.PositionOrDirection = { -9.0f, 1.0f, 0.0f, 1.0f },
 				.Type = LIGHT_TYPE_POINT,
 				.Intensity = 30.0f,
 				.Radius = 10.0f,
 			});
-			m_Lights.push_back(Light{
-				.PositionOrDirection = { -8.0f, 1.0f, 0.0f, 1.0f },
-				.Type = LIGHT_TYPE_POINT,
-				.Intensity = 30.0f,
-				.Radius = 10.0f,
-			});
-			m_Lights.push_back(Light{
-				.PositionOrDirection = { -9.5f, 4.0f, 0.0f, 1.0f },
-				.Type = LIGHT_TYPE_POINT,
-				.Intensity = 30.0f,
-				.Radius = 5.0f,
-				});
-			m_Lights.push_back(Light{
-				.PositionOrDirection = { -9.5f, 4.0f, 0.0f, 1.0f },
-				.Type = LIGHT_TYPE_POINT,
-				.Intensity = 30.0f,
-				.Radius = 5.0f,
-			});*/
 		}
 
 		std::vector<RenderObject> GenerateRenderObjects() {
@@ -77,8 +60,9 @@ namespace AT {
 			DirectX::XMStoreFloat4A(&render_data.ReflectionProbe->Position, Camera.Position);
 
 			//Fill in Camera Position and Matrices.
+			render_data.FOV = Camera.VerticalFOV;
 			render_data.CameraPosition = this->Camera.Position;
-			render_data.ProjectionMatrix = DirectX::XMMatrixPerspectiveFovRH(0.415f * 3.14159f, 1280.0f / 720.0f, 1000.0f, 1.0f);
+			render_data.ProjectionMatrix = DirectX::XMMatrixPerspectiveFovRH(Camera.VerticalFOV, 1280.0f / 720.0f, 1000.0f, 1.0f);
 			DirectX::XMVECTOR rotation_quaternion = DirectX::XMQuaternionRotationRollPitchYawFromVector(this->Camera.Rotation);
 			DirectX::XMMATRIX rotation_matrix = DirectX::XMMatrixRotationQuaternion(rotation_quaternion);
 			render_data.ViewMatrix = DirectX::XMMatrixLookAtRH(this->Camera.Position, DirectX::XMVectorAdd(this->Camera.Position, DirectX::XMVector3Transform(DirectX::XMVectorSet(0.0f, 0.0f, -1.0f, 0.0f), rotation_matrix)), DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f));

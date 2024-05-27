@@ -1,5 +1,5 @@
 @echo off
-set shadername=Depth
+set shadername=Deferred
 set shader=C:\Users\4cdyl\OneDrive\Desktop\ATEngine\shaders\hlsl\%shadername%.hlsl
 set target=ps_6_0
 set entry=PS

@@ -1,5 +1,5 @@
 @echo off
-set shadername=GenerateMipChain
+set shadername=SSR
 set shader=C:\Users\4cdyl\OneDrive\Desktop\ATEngine\shaders\hlsl\%shadername%.hlsl
 set target=cs_6_0
 set entry=main

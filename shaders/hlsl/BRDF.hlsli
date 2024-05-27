@@ -1,6 +1,6 @@
 static const float PI = 3.14159265359f;
 static const float INVERSE_PI = 1.0f / 3.14159265359f;
-static const float F0_Dielectrics = 0.04f;
+static const float3 F0_DIELECTRICS = float3(0.04f, 0.04f, 0.04f);
 
 struct BSDF_Parameters {
 	float3 L;
@@ -13,10 +13,10 @@ struct BSDF_Parameters {
 	float LdotH;
 	float NdotH;
 	float VdotH;
-	float4 Diffuse;
+	float4 DiffuseColor;
 	float Metalness;
 	float Roughness;
-	float3 Specular_Color;
+	float3 SpecularColor;
 };
 
 float3 Lambertian_Diffuse(float3 diffuse) {
@@ -42,14 +42,14 @@ float Geometric(float roughness, float NdotV, float NdotL) {
 }
 
 float3 BRDF(BSDF_Parameters parameters) {
-	float3 Diffuse = Lambertian_Diffuse(parameters.Diffuse.rgb); 
+	float3 Diffuse = Lambertian_Diffuse(parameters.DiffuseColor.rgb); 
 	float D = Distribution_GGX(parameters.Roughness, parameters.NdotH);
-	float3 F = Fresnel_SchlickApprox(parameters.Specular_Color, parameters.VdotH);
+	float3 F = Fresnel_SchlickApprox(parameters.SpecularColor, parameters.VdotH);
 	float G = Geometric(parameters.Roughness, parameters.NdotV, parameters.NdotL);
 	float3 Specular = (D * F * G) / (4.0f * parameters.NdotL * parameters.NdotV + 0.0000001f);
 	return Diffuse + Specular; 
 }
 
 float3 Diffuse(BSDF_Parameters parameters) {
-	return Lambertian_Diffuse(parameters.Diffuse.rgb);
+	return Lambertian_Diffuse(parameters.DiffuseColor.rgb);
 }

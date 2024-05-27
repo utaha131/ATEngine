@@ -21,7 +21,9 @@ namespace RHI::DX12 {
 
 	DX12RenderBackend::~DX12RenderBackend() {
 		m_Factory->Release();
-		m_DebugController->Release();
+		if (m_Debug) {
+			m_DebugController->Release();
+		}
 	}
 
 	RHI::Result DX12RenderBackend::GetAdapters(std::vector<RHI::Adapter>& adapters) {

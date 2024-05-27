@@ -7,14 +7,24 @@ namespace AT {
 	public:
 		BEGIN_SHADER_PARAMETER_GROUP(PassGroup)
 			BEGIN_CONSTANTS
-				DEFINE_CONSTANT(DirectX::XMFLOAT4X4, MV_Matrix)
+				DEFINE_CONSTANT(DirectX::XMFLOAT4X4, ModelViewMatrix)
 			END_CONSTANTS
-			SHADER_PARAMETER(TextureCube, SkyBox)
+			SHADER_PARAMETER(TextureCube, SkyboxTexture)
 		END_SHADER_PARAMETER_GROUP(PassGroup)
 
 		BEGIN_SHADER_PARAMETERS(SkyboxShaderParameters)
 			SHADER_PARAMETER_GROUP(PassGroup, Pass)
 			BEGIN_STATIC_SAMPLER(Sampler)
+			.Filter = RHI::Filter::MIN_MAG_LINEAR_MIP_POINT,
+			.AddressU = RHI::TextureAddressMode::CLAMP,
+			.AddressV = RHI::TextureAddressMode::CLAMP,
+			.AddressW = RHI::TextureAddressMode::CLAMP,
+			.MipLODBias = 0,
+			.MaxAnisotropy = 10,
+			.ComparisonFunction = RHI::ComparisonFunction::LESS_EQUAL,
+			.BorderColor = RHI::StaticSamplerDescription::StaticBorderColor::OPAQUE_BLACK,
+			.MinLOD = 0.0f,
+			.MaxLOD = RHI_FLOAT32_MAX,
 			END_STATIC_SAMPLER(Sampler)
 		END_SHADER_PARAMETERS(SkyboxShaderParameters)
 
@@ -26,16 +36,6 @@ namespace AT {
 			m_PixelShader = ps;
 
 			Parameters parameters;
-			parameters.Sampler.Filter = RHI::Filter::MIN_MAG_MIP_LINEAR;
-			parameters.Sampler.AddressU = RHI::TextureAddressMode::CLAMP;
-			parameters.Sampler.AddressV = RHI::TextureAddressMode::CLAMP;
-			parameters.Sampler.AddressW = RHI::TextureAddressMode::CLAMP;
-			parameters.Sampler.ComparisonFunction = RHI::ComparisonFunction::LESS_EQUAL;
-			parameters.Sampler.MaxAnisotropy = 10;
-			parameters.Sampler.MinLOD = 0.0f;
-			parameters.Sampler.MaxLOD = RHI_FLOAT32_MAX;
-			parameters.Sampler.MipLODBias = 0;
-			parameters.Sampler.BorderColor = RHI::StaticSamplerDescription::StaticBorderColor::OPAQUE_BLACK;
 			m_RootSignature = root_signature_manager.CreateOrGetRootSignature(parameters.root_signature_description);
 		}
 
@@ -44,7 +44,7 @@ namespace AT {
 			params->Pass->constant_buffer->WriteData(params->Pass->constants);
 			RHI::ConstantBufferView cbv = params->Pass->constant_buffer->GetNative();
 			m_Device->WriteDescriptorTable(params->Pass->m_descriptor_table, 0, 1, &cbv);
-			m_Device->WriteDescriptorTable(params->Pass->m_descriptor_table, 1, 1, &params->Pass->SkyBox.srv);
+			m_Device->WriteDescriptorTable(params->Pass->m_descriptor_table, 1, 1, &params->Pass->SkyboxTexture.srv);
 			command_list->SetGraphicsRootDescriptorTable(0, params->Pass->m_descriptor_table);
 		}
 

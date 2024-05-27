@@ -37,6 +37,7 @@ namespace AT {
 	struct FrameGraphSRVDescription {
 		uint32_t FirstSliceIndex = 0u;
 		uint32_t ArraySize = 1u;
+		uint32_t MostDetailedMip = 0u;
 		uint32_t MipLevels = 1u;
 	};
 
@@ -45,14 +46,14 @@ namespace AT {
 		rhi_srv_description.Format = format;
 		if (description.FirstSliceIndex == 0u && description.ArraySize == 1u) {
 			rhi_srv_description.ViewDimension = RHI::ShaderResourceViewViewDimension::TEXTURE_2D;
-			rhi_srv_description.Texture2D.MostDetailedMip = 0u;
+			rhi_srv_description.Texture2D.MostDetailedMip = description.MostDetailedMip;
 			rhi_srv_description.Texture2D.MipLevels = description.MipLevels;
 			rhi_srv_description.Texture2D.PlaneSlice = 0u;
 			rhi_srv_description.Texture2D.ResourceMinLODClamp = 0.0f;
 		}
 		else if (description.FirstSliceIndex == 0u && description.ArraySize == 6) { //Handle Cube Texture.
 			rhi_srv_description.ViewDimension = RHI::ShaderResourceViewViewDimension::TEXTURE_CUBE;
-			rhi_srv_description.TextureCube.MostDetailedMip = 0u;
+			rhi_srv_description.TextureCube.MostDetailedMip = description.MostDetailedMip;
 			rhi_srv_description.TextureCube.MipLevels = description.MipLevels;
 			rhi_srv_description.TextureCube.ResourceMinLODClamp = 0.0f;
 		}
@@ -60,7 +61,7 @@ namespace AT {
 			rhi_srv_description.ViewDimension = RHI::ShaderResourceViewViewDimension::TEXTURE_2D_ARRAY;
 			rhi_srv_description.Texture2DArray.FirstArraySlice = description.FirstSliceIndex;
 			rhi_srv_description.Texture2DArray.ArraySize = description.ArraySize;
-			rhi_srv_description.Texture2DArray.MostDetailedMip = 0u;
+			rhi_srv_description.Texture2DArray.MostDetailedMip = description.MostDetailedMip;
 			rhi_srv_description.Texture2DArray.MipLevels = description.MipLevels;
 			rhi_srv_description.Texture2DArray.PlaneSlice = 0u;
 			rhi_srv_description.Texture2DArray.ResourceMinLODClamp = 0.0f;

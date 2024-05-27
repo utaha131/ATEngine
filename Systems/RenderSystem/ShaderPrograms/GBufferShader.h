@@ -6,25 +6,16 @@
 namespace AT {
 	class GBufferShader : public GPUShader {
 	public:
-		/*BEGIN_SHADER_PARAMETER_GROUP(MaterialGroup)
-		BEGIN_CONSTANTS()
-			DEFINE_CONSTANT(DirectX::XMFLOAT3, Base_Color_Factor)
-		END_CONSTANTS()
-		SHADER_PARAMETER(Texture2D, BaseColor)
-		SHADER_PARAMETER(Texture2D, Normals)
-		SHADER_PARAMETER(Texture2D, Surface)
-		END_SHADER_PARAMETER_GROUP(MaterialGroup)*/
-
 		BEGIN_SHADER_PARAMETER_GROUP(ObjectGroup)
 		BEGIN_CONSTANTS
-		DEFINE_CONSTANT(DirectX::XMFLOAT4X4A, MVP_Matrix)
-		DEFINE_CONSTANT(DirectX::XMFLOAT4X4A, Normal_Matrix)
+		DEFINE_CONSTANT(DirectX::XMFLOAT4X4A, ModelViewProjectionMatrix)
+		DEFINE_CONSTANT(DirectX::XMFLOAT4X4A, NormalMatrix)
 		END_CONSTANTS
 		END_SHADER_PARAMETER_GROUP(ObjectGroup)
 
 		BEGIN_SHADER_PARAMETERS(GBufferParameters)
-		SHADER_PARAMETER_GROUP(MaterialManager::MaterialGroup, material)
-		SHADER_PARAMETER_GROUP(ObjectGroup, object)
+		SHADER_PARAMETER_GROUP(MaterialManager::MaterialGroup, Material)
+		SHADER_PARAMETER_GROUP(ObjectGroup, Object)
 			BEGIN_STATIC_SAMPLER(MaterialSampler)
 				.Filter = RHI::Filter::ANISOTROPIC,
 				.AddressU = RHI::TextureAddressMode::WRAP,
@@ -40,22 +31,6 @@ namespace AT {
 		END_SHADER_PARAMETERS(GBufferParameters)
 
 		using Parameters = GBufferParameters;
-
-		/*
-			RHI_FILTER Filter;
-		RHI_TEXTURE_ADDRESS_MODE Address_U;
-		RHI_TEXTURE_ADDRESS_MODE Address_V;
-		RHI_TEXTURE_ADDRESS_MODE Address_W;
-		RHI_FLOAT32 Mip_LOD_Bias;
-		RHI_UINT32 Max_Anisotropy;
-		RHI_COMPARISON_FUNCTION Comparison_Function;
-		RHI_FLOAT32 Border_Color[4];
-		RHI_FLOAT32 Min_LOD;
-		RHI_FLOAT32 Max_LOD;
-		RHI_UINT32 Shader_Register;
-		RHI_UINT32 Register_Space;
-		*/
-
 		GBufferShader(RHI::Shader vs, RHI::Shader ps, GPURootSignatureManager& root_signature_manager) : GPUShader(root_signature_manager.GetDevice()) {
 			m_VertexShader = vs;
 
@@ -67,16 +42,16 @@ namespace AT {
 
 		void SetParameters(RHI::CommandList command_list, ShaderParameters* parameters) const override {
 			GBufferParameters* param = static_cast<GBufferParameters*>(parameters);
-			param->object->constant_buffer->WriteData(param->object->constants);
-			m_Device->WriteDescriptorTable(param->object->m_descriptor_table, 0, 1, &param->object->constant_buffer->GetNative());
+			param->Object->constant_buffer->WriteData(param->Object->constants);
+			m_Device->WriteDescriptorTable(param->Object->m_descriptor_table, 0, 1, &param->Object->constant_buffer->GetNative());
 
-			m_Device->WriteDescriptorTable(param->material->m_descriptor_table, 0, 1, &param->material->constant_buffer->GetNative());
-			m_Device->WriteDescriptorTable(param->material->m_descriptor_table, 1, 1, &param->material->BaseColor.srv);
-			m_Device->WriteDescriptorTable(param->material->m_descriptor_table, 2, 1, &param->material->Normals.srv);
-			m_Device->WriteDescriptorTable(param->material->m_descriptor_table, 3, 1, &param->material->Surface.srv);
+			m_Device->WriteDescriptorTable(param->Material->m_descriptor_table, 0, 1, &param->Material->constant_buffer->GetNative());
+			m_Device->WriteDescriptorTable(param->Material->m_descriptor_table, 1, 1, &param->Material->BaseColor.srv);
+			m_Device->WriteDescriptorTable(param->Material->m_descriptor_table, 2, 1, &param->Material->Normals.srv);
+			m_Device->WriteDescriptorTable(param->Material->m_descriptor_table, 3, 1, &param->Material->Surface.srv);
 
-			command_list->SetGraphicsRootDescriptorTable(0, param->material->m_descriptor_table);
-			command_list->SetGraphicsRootDescriptorTable(1, param->object->m_descriptor_table);
+			command_list->SetGraphicsRootDescriptorTable(0, param->Material->m_descriptor_table);
+			command_list->SetGraphicsRootDescriptorTable(1, param->Object->m_descriptor_table);
 		}
 
 		RHI::Shader GetVertexShader() const { return m_VertexShader; }

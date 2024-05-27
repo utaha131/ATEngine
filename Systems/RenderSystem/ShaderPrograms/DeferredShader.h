@@ -11,26 +11,21 @@ namespace AT {
 		};
 		BEGIN_SHADER_PARAMETER_GROUP(DEFERREDINPUT)
 		BEGIN_CONSTANTS
-			DEFINE_CONSTANT(LightInput, lights)
-			DEFINE_CONSTANT(DirectX::XMFLOAT4X4A, Inverse_Projection_Matrix)
-			DEFINE_CONSTANT(DirectX::XMFLOAT4X4A, Inverse_View_Matrix)
-			DEFINE_CONSTANT(bool, Use_Enviroment_Map)
+			DEFINE_CONSTANT(LightInput, Lights)
+			DEFINE_CONSTANT(DirectX::XMFLOAT4X4A, InverseProjectionMatrix)
+			DEFINE_CONSTANT(DirectX::XMFLOAT4X4A, InverseViewMatrix)
 		END_CONSTANTS
-		SHADER_PARAMETER(Texture2D, Base_Color)
-		SHADER_PARAMETER(Texture2D, Normals)
-		SHADER_PARAMETER(Texture2D, Surface)
-		SHADER_PARAMETER(Texture2D, Depth)
-		SHADER_PARAMETER(Texture2D, SSAO)
+		SHADER_PARAMETER(Texture2D, BaseColorTexture)
+		SHADER_PARAMETER(Texture2D, NormalTexture)
+		SHADER_PARAMETER(Texture2D, SurfaceTexture)
+		SHADER_PARAMETER(Texture2D, DepthTexture)
 		
 		SHADER_PARAMETER_ARRAY(Texture2D, CSM, 5)
 		SHADER_PARAMETER_ARRAY(Texture2D, OSM, 5)
-		SHADER_PARAMETER(Texture2D, Irradiance)
-		SHADER_PARAMETER(TextureCube, prefiltered_map)
-		SHADER_PARAMETER(Texture2D, env_brdf)
 		END_SHADER_PARAMETER_GROUP(DEFERREDINPUT)
 
 		BEGIN_SHADER_PARAMETERS(DeferredParameters)
-		SHADER_PARAMETER_GROUP(DEFERREDINPUT, pass)
+		SHADER_PARAMETER_GROUP(DEFERREDINPUT, Pass)
 		BEGIN_STATIC_SAMPLER(Sampler)
 			.Filter = RHI::Filter::MIN_MAG_MIP_POINT,
 			.AddressU = RHI::TextureAddressMode::CLAMP,
@@ -49,7 +44,7 @@ namespace AT {
 			.AddressV = RHI::TextureAddressMode::CLAMP,
 			.AddressW = RHI::TextureAddressMode::CLAMP,
 			.MipLODBias = 0,
-			.MaxAnisotropy = 10,
+			.MaxAnisotropy = 1,
 			.ComparisonFunction = RHI::ComparisonFunction::LESS_EQUAL,
 			.BorderColor = RHI::StaticSamplerDescription::StaticBorderColor::OPAQUE_BLACK,
 			.MinLOD = 0.0f,
@@ -65,61 +60,23 @@ namespace AT {
 			m_PixelShader = ps;
 
 			DeferredParameters parameters;
-			{
-				parameters.Sampler.Filter = RHI::Filter::MIN_MAG_MIP_POINT;
-				parameters.Sampler.AddressU = RHI::TextureAddressMode::CLAMP;
-				parameters.Sampler.AddressV = RHI::TextureAddressMode::CLAMP;
-				parameters.Sampler.AddressW = RHI::TextureAddressMode::CLAMP;
-				parameters.Sampler.ComparisonFunction = RHI::ComparisonFunction::LESS_EQUAL;
-				parameters.Sampler.MaxAnisotropy = 10;
-				parameters.Sampler.MinLOD = 0.0f;
-				parameters.Sampler.MaxLOD = RHI_FLOAT32_MAX;
-				parameters.Sampler.MipLODBias = 0;
-				parameters.Sampler.BorderColor = RHI::StaticSamplerDescription::StaticBorderColor::OPAQUE_BLACK;
-			}
-			{
-				parameters.ShadowSampler.Filter = RHI::Filter::MIN_MAG_MIP_LINEAR;
-				parameters.ShadowSampler.AddressU = RHI::TextureAddressMode::CLAMP;
-				parameters.ShadowSampler.AddressV = RHI::TextureAddressMode::CLAMP;
-				parameters.ShadowSampler.AddressW = RHI::TextureAddressMode::CLAMP;
-				parameters.ShadowSampler.ComparisonFunction = RHI::ComparisonFunction::LESS_EQUAL;
-				parameters.ShadowSampler.MaxAnisotropy = 10;
-				parameters.ShadowSampler.MinLOD = 0.0f;
-				parameters.ShadowSampler.MaxLOD = RHI_FLOAT32_MAX;
-				parameters.ShadowSampler.MipLODBias = 0;
-				parameters.ShadowSampler.BorderColor = RHI::StaticSamplerDescription::StaticBorderColor::OPAQUE_BLACK;
-			}
 			m_RootSignature = root_signature_manager.CreateOrGetRootSignature(parameters.root_signature_description);
 		}
 		
 		void SetParameters(RHI::CommandList command_list, ShaderParameters* parameters) const override {
 			Parameters* param = static_cast<Parameters*>(parameters);
-			param->pass->constant_buffer->WriteData(param->pass->constants);
-			m_Device->WriteDescriptorTable(param->pass->m_descriptor_table, 0, 1, &param->pass->constant_buffer->GetNative());
-			m_Device->WriteDescriptorTable(param->pass->m_descriptor_table, 1, 1, &param->pass->Base_Color.srv);
-			m_Device->WriteDescriptorTable(param->pass->m_descriptor_table, 2, 1, &param->pass->Normals.srv);
-			m_Device->WriteDescriptorTable(param->pass->m_descriptor_table, 3, 1, &param->pass->Surface.srv);
-			m_Device->WriteDescriptorTable(param->pass->m_descriptor_table, 4, 1, &param->pass->Depth.srv);
-			m_Device->WriteDescriptorTable(param->pass->m_descriptor_table, 5, 1, &param->pass->SSAO.srv);
+			param->Pass->constant_buffer->WriteData(param->Pass->constants);
+			m_Device->WriteDescriptorTable(param->Pass->m_descriptor_table, 0, 1, &param->Pass->constant_buffer->GetNative());
+			m_Device->WriteDescriptorTable(param->Pass->m_descriptor_table, 1, 1, &param->Pass->BaseColorTexture.srv);
+			m_Device->WriteDescriptorTable(param->Pass->m_descriptor_table, 2, 1, &param->Pass->NormalTexture.srv);
+			m_Device->WriteDescriptorTable(param->Pass->m_descriptor_table, 3, 1, &param->Pass->SurfaceTexture.srv);
+			m_Device->WriteDescriptorTable(param->Pass->m_descriptor_table, 4, 1, &param->Pass->DepthTexture.srv);
 
-			RHI::ShaderResourceView csm_srvs[5] = { param->pass->CSM[0].srv, param->pass->CSM[1].srv, param->pass->CSM[2].srv, param->pass->CSM[3].srv, param->pass->CSM[4].srv };
-			m_Device->WriteDescriptorTable(param->pass->m_descriptor_table, 6, 5, csm_srvs);
-			//m_Device->WriteDescriptorTable(param->pass->m_descriptor_table, 7, param->pass->CSM[1].srv);
-			//m_Device->WriteDescriptorTable(param->pass->m_descriptor_table, 8, param->pass->CSM[2].srv);
-			//m_Device->WriteDescriptorTable(param->pass->m_descriptor_table, 9, param->pass->CSM[3].srv);
-			//m_Device->WriteDescriptorTable(param->pass->m_descriptor_table, 10, param->pass->CSM[4].srv);
-			
-			RHI::ShaderResourceView osm_srvs[5] = { param->pass->OSM[0].srv, param->pass->OSM[1].srv, param->pass->OSM[2].srv, param->pass->OSM[3].srv, param->pass->OSM[4].srv };
-			m_Device->WriteDescriptorTable(param->pass->m_descriptor_table, 11, 5, osm_srvs);
-			//m_Device->WriteDescriptorTable(param->pass->m_descriptor_table, 12, param->pass->OSM[1].srv);
-			//m_Device->WriteDescriptorTable(param->pass->m_descriptor_table, 13, param->pass->OSM[2].srv);
-			//m_Device->WriteDescriptorTable(param->pass->m_descriptor_table, 14, param->pass->OSM[3].srv);
-			//m_Device->WriteDescriptorTable(param->pass->m_descriptor_table, 15, param->pass->OSM[4].srv);
-
-			m_Device->WriteDescriptorTable(param->pass->m_descriptor_table, 16, 1, &param->pass->Irradiance.srv);
-			m_Device->WriteDescriptorTable(param->pass->m_descriptor_table, 17, 1, &param->pass->prefiltered_map.srv);
-			m_Device->WriteDescriptorTable(param->pass->m_descriptor_table, 18, 1, &param->pass->env_brdf.srv);
-			command_list->SetGraphicsRootDescriptorTable(0, param->pass->m_descriptor_table);
+			RHI::ShaderResourceView csm_srvs[5] = { param->Pass->CSM[0].srv, param->Pass->CSM[1].srv, param->Pass->CSM[2].srv, param->Pass->CSM[3].srv, param->Pass->CSM[4].srv };
+			m_Device->WriteDescriptorTable(param->Pass->m_descriptor_table, 5, 5, csm_srvs);
+			RHI::ShaderResourceView osm_srvs[5] = { param->Pass->OSM[0].srv, param->Pass->OSM[1].srv, param->Pass->OSM[2].srv, param->Pass->OSM[3].srv, param->Pass->OSM[4].srv };
+			m_Device->WriteDescriptorTable(param->Pass->m_descriptor_table, 10, 5, osm_srvs);
+			command_list->SetGraphicsRootDescriptorTable(0, param->Pass->m_descriptor_table);
 		}
 
 		RHI::Shader GetVertexShader() const { return m_VertexShader; }

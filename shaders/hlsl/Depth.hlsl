@@ -12,22 +12,22 @@ struct PixelIn {
 };
 
 [[vk::binding(0, 0)]] cbuffer ObjectMatrices : register(b0, space0) {
-	float4x4 Model_View_Projection_Matrix;
-	float4x4 Normal_Matrix;
+	float4x4 ModelViewProjectionMatrix;
+	float4x4 NormalMatrix;
 };
 
-[[vk::binding(1, 0)]] Texture2D Base_Color_Map : register(t0);
+[[vk::binding(1, 0)]] Texture2D g_BaseColorMap : register(t0);
 [[vk::binding(2, 0)]] SamplerState g_Sampler : register(s0);
 
 PixelIn VS(VertexIn input) {
 	PixelIn output;
-	output.Position = mul(Model_View_Projection_Matrix, float4(input.Position.xyz, 1.0f));
+	output.Position = mul(ModelViewProjectionMatrix, float4(input.Position.xyz, 1.0f));
 	output.UV = input.UV;
 	return output;
 }
 
 void PS(PixelIn input) {
-	if (Base_Color_Map.Sample(g_Sampler, input.UV).a <= 0.05f) {
+	if (g_BaseColorMap.Sample(g_Sampler, input.UV).a <= 0.05f) {
         discard;
     }
 }

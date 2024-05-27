@@ -6,7 +6,7 @@
 #include "./GPUConstantBuffer.h"
 #define _128_MB_ 134217728 
 #define _DEFAULT_HEAP_SIZE_ _128_MB_ * 2
-#define _UPLOAD_HEAP_SIZE_ _128_MB_ * 3
+#define _UPLOAD_HEAP_SIZE_  _128_MB_ * 2
 
 namespace AT {
 	class FrameGraphRHIResourceAllocator {

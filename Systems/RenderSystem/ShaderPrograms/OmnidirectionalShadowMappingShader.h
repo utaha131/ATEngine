@@ -6,15 +6,15 @@ namespace AT {
 	public:
 		BEGIN_SHADER_PARAMETER_GROUP(PassGroup)
 		BEGIN_CONSTANTS
-		DEFINE_CONSTANT(DirectX::XMFLOAT4X4A, MVP_Matrix)
-		DEFINE_CONSTANT(DirectX::XMFLOAT4X4A, Model_Matrix)
-		DEFINE_CONSTANT(DirectX::XMFLOAT4A, Light_Position)
-		DEFINE_CONSTANT(float, Max_Distance)
+		DEFINE_CONSTANT(DirectX::XMFLOAT4X4A, ModelViewProjectionMatrix)
+		DEFINE_CONSTANT(DirectX::XMFLOAT4X4A, ModelMatrix)
+		DEFINE_CONSTANT(DirectX::XMFLOAT4A, LightPosition)
+		DEFINE_CONSTANT(float, MaxDistance)
 		END_CONSTANTS
 		END_SHADER_PARAMETER_GROUP(PassGroup)
 
 		BEGIN_SHADER_PARAMETERS(OmnidirectionalShadowMappingParameters)
-		SHADER_PARAMETER_GROUP(PassGroup, pass)
+		SHADER_PARAMETER_GROUP(PassGroup, Pass)
 		END_SHADER_PARAMETERS(OmnidirectionalShadowMappingParameters)
 
 		using Parameters = OmnidirectionalShadowMappingParameters;
@@ -22,7 +22,6 @@ namespace AT {
 		OmnidirectionalShadowMappingShader(RHI::Shader vs, RHI::Shader ps, GPURootSignatureManager& root_signature_manager) : GPUShader(root_signature_manager.GetDevice()) {
 
 			m_VertexShader = vs;
-
 			m_PixelShader = ps;
 
 			OmnidirectionalShadowMappingParameters parameters;
@@ -31,9 +30,9 @@ namespace AT {
 
 		void SetParameters(RHI::CommandList command_list, ShaderParameters* parameters) const override {
 			OmnidirectionalShadowMappingParameters* param = static_cast<OmnidirectionalShadowMappingParameters*>(parameters);
-			param->pass->constant_buffer->WriteData(param->pass->constants);
-			m_Device->WriteDescriptorTable(param->pass->m_descriptor_table, 0, 1, &param->pass->constant_buffer->GetNative());
-			command_list->SetGraphicsRootDescriptorTable(0, param->pass->m_descriptor_table);
+			param->Pass->constant_buffer->WriteData(param->Pass->constants);
+			m_Device->WriteDescriptorTable(param->Pass->m_descriptor_table, 0, 1, &param->Pass->constant_buffer->GetNative());
+			command_list->SetGraphicsRootDescriptorTable(0, param->Pass->m_descriptor_table);
 		}
 
 		RHI::Shader GetVertexShader() { return m_VertexShader; }

@@ -7,11 +7,11 @@ namespace AT {
 	public:
 		BEGIN_SHADER_PARAMETER_GROUP(PassGroup)
 		BEGIN_CONSTANTS
-			DEFINE_CONSTANT(DirectX::XMFLOAT4X4, MV_Matrix)
+			DEFINE_CONSTANT(DirectX::XMFLOAT4X4, ModelViewMatrix)
 			DEFINE_CONSTANT(float, Roughness)
-			DEFINE_CONSTANT(uint32_t, Mip_Slice)
+			DEFINE_CONSTANT(uint32_t, MipSlice)
 		END_CONSTANTS
-		SHADER_PARAMETER(TextureCube, Enviroment_Map)
+		SHADER_PARAMETER(TextureCube, EnviromentMapTexture)
 		END_SHADER_PARAMETER_GROUP(PassGroup)
 
 		BEGIN_SHADER_PARAMETERS(PreFilteredEnviromentMapShaderParameters)
@@ -44,7 +44,7 @@ namespace AT {
 			Parameters* params = static_cast<Parameters*>(parameters);
 			params->Pass->constant_buffer->WriteData(params->Pass->constants);
 			m_Device->WriteDescriptorTable(params->Pass->m_descriptor_table, 0, 1, &params->Pass->constant_buffer->GetNative());
-			m_Device->WriteDescriptorTable(params->Pass->m_descriptor_table, 1, 1, &params->Pass->Enviroment_Map.srv);
+			m_Device->WriteDescriptorTable(params->Pass->m_descriptor_table, 1, 1, &params->Pass->EnviromentMapTexture.srv);
 			command_list->SetGraphicsRootDescriptorTable(0, params->Pass->m_descriptor_table);
 		}
 

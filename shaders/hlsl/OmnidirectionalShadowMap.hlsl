@@ -13,10 +13,10 @@ struct PixelIn {
 
 
 [[vk::binding(0, 0)]] cbuffer ObjectMatrices : register(b0) {
-	float4x4 Light_Projection_Matrix;
-	float4x4 Model_Matrix;
-	float4 Light_Position;
-	float Max_Distance;
+	float4x4 ModelViewProjectionMatrix;
+	float4x4 ModelMatrix;
+	float4 LightPosition;
+	float MaxDistance;
 };
 
 
@@ -24,11 +24,11 @@ struct PixelIn {
 PixelIn VS(VertexIn input) {
 	PixelIn output;
 	float4 position = float4(input.Position, 1.0f);
-	output.Fragment_Position = mul(Model_Matrix, position);
-	output.Position = mul(Light_Projection_Matrix, position);
+	output.Fragment_Position = mul(ModelMatrix, position);
+	output.Position = mul(ModelViewProjectionMatrix, position);
 	return output;
 }
 
 float PS(PixelIn input) : SV_Depth {
-	return distance(Light_Position.xyz, input.Fragment_Position.xyz / input.Fragment_Position.w) / Max_Distance;
+	return distance(LightPosition.xyz, input.Fragment_Position.xyz / input.Fragment_Position.w) / MaxDistance;
 }

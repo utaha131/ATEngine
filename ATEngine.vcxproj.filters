@@ -343,9 +343,6 @@
     <ClInclude Include="Platform\Linux\LinuxWindow.h">
       <Filter>Platform\Linux</Filter>
     </ClInclude>
-    <ClInclude Include="Systems\RenderSystem\RenderTechniques.h">
-      <Filter>Systems\RenderSystem</Filter>
-    </ClInclude>
     <ClInclude Include="Systems\RenderSystem\RenderPass.h">
       <Filter>Systems\RenderSystem\FrameGraphBuilder</Filter>
     </ClInclude>
@@ -631,7 +628,7 @@
     <ClInclude Include="Systems\RenderSystem\ShaderPrograms\DepthPrepassShader.h">
       <Filter>Systems\RenderSystem\Shaders</Filter>
     </ClInclude>
-    <ClInclude Include="Systems\RenderSystem\ShaderPrograms\EnvBRDFShader.h">
+    <ClInclude Include="Systems\RenderSystem\ShaderPrograms\IntegrateBRDFShader.h">
       <Filter>Systems\RenderSystem\Shaders</Filter>
     </ClInclude>
     <ClInclude Include="Systems\RenderSystem\ShaderPrograms\GBufferShader.h">
@@ -678,6 +675,18 @@
     </ClInclude>
     <ClInclude Include="RenderData.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\RenderSystem\ShaderPrograms\ScreenSpaceReflection.h">
+      <Filter>Systems\RenderSystem\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\RenderSystem\ShaderPrograms\ReflectionShader.h">
+      <Filter>Systems\RenderSystem\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\RenderSystem\ShaderPrograms\DiffuseIndirectShader.h">
+      <Filter>Systems\RenderSystem\Shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\RenderSystem\RenderFeatures.h">
+      <Filter>Systems\RenderSystem</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

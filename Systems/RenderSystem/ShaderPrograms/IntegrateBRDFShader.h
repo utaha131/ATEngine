@@ -3,19 +3,17 @@
 #include "../GPUShader.h"
 
 namespace AT {
-	class EnvBRDF : public GPUShader {
+	class IntegrateBRDFShader : public GPUShader {
 	public:
 		BEGIN_SHADER_PARAMETER_GROUP(PassGroup)
-			SHADER_PARAMETER(Texture2D, empty)
 		END_SHADER_PARAMETER_GROUP(PassGroup)
 
-		BEGIN_SHADER_PARAMETERS(EnvBRDFShaderParameters)
-		SHADER_PARAMETER_GROUP(PassGroup, Pass)
-		END_SHADER_PARAMETERS(EnvBRDFShaderParameters)
+		BEGIN_SHADER_PARAMETERS(IntegrateBRDFShaderParameters)
+		END_SHADER_PARAMETERS(IntegrateBRDFShaderParameters)
 
-		using Parameters = EnvBRDFShaderParameters;
+		using Parameters = IntegrateBRDFShaderParameters;
 
-		EnvBRDF(RHI::Shader vs, RHI::Shader ps, GPURootSignatureManager& root_signature_manager) : GPUShader(root_signature_manager.GetDevice()) {
+		IntegrateBRDFShader(RHI::Shader vs, RHI::Shader ps, GPURootSignatureManager& root_signature_manager) : GPUShader(root_signature_manager.GetDevice()) {
 
 			m_VertexShader = vs;
 

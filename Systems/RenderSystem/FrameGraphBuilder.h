@@ -1,7 +1,6 @@
 #ifndef _AT_RENDER_SYSTEM_FRAME_GRAPH_BUILDER_H_
 #define _AT_RENDER_SYSTEM_FRAME_GRAPH_BUILDER_H_
 #define COMMAND_LISTS_PER_POOL 10
-#define CBUFFER_PER_POOL 4500
 #include "../RHI/RHI.h"
 #include "RenderPass.h"
 #include <stdint.h>
@@ -139,7 +138,8 @@ namespace AT {
 				delete m_cbuffer_pool_2048[i];
 				delete m_cbuffer_pool_256[i];
 			}*/
-			delete m_Fence;
+			delete m_GraphicsFence;
+			delete m_ComputeFence;
 			m_RHIResourceAllocator.Clear();
 		}
 
@@ -332,8 +332,10 @@ namespace AT {
 		RHI::Device m_Device;
 		FrameGraphRHIResourceAllocator m_RHIResourceAllocator;
 		RHI::CommandList m_CommandList;
-		RHI::Fence m_Fence;
-		uint64_t m_CurrentFenceValue;
+		RHI::Fence m_GraphicsFence;
+		uint64_t m_GraphicsCurrentFenceValue;
+		RHI::Fence m_ComputeFence;
+		uint64_t m_ComputeCurrentFenceValue;
 
 		std::vector<FrameGraphRenderPass*> m_RenderPasses;
 		std::unordered_map<std::string, uint32_t> m_RenderPassNameToRenderPassID;
@@ -371,7 +373,7 @@ namespace AT {
 
 		//Caches
 		std::list<FrameGraphTextureRef> m_texture_cache;
-		FrameGraphCBufferPool<256, 4500>* m_256_pool;
+		FrameGraphCBufferPool<256, 3000>* m_256_pool;
 		FrameGraphCBufferPool<2048, 500>* m_2048_pool;
 		std::vector<FrameGraphRenderThreadCommandObjects*> m_RenderThreadCommandObjects;
 	};

@@ -27,6 +27,7 @@ namespace AT {
 
 	struct Light {
 		DirectX::XMFLOAT4A PositionOrDirection;
+		DirectX::XMFLOAT4A Color = { 1.0f, 1.0f, 1.0f, 1.0f };
 		DirectX::XMFLOAT4X4A LightMatrices[4];
 		LIGHT_TYPE Type;
 		float Intensity;
@@ -36,6 +37,7 @@ namespace AT {
 	class Mesh;
 	class Material;
 	struct RenderData {
+		float FOV;
 		DirectX::XMVECTOR CameraPosition;
 		DirectX::XMMATRIX ProjectionMatrix;
 		DirectX::XMMATRIX ViewMatrix;

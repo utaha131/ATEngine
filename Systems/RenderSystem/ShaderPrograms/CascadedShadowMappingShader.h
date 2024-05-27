@@ -7,12 +7,12 @@ namespace AT {
 	public:
 		BEGIN_SHADER_PARAMETER_GROUP(ObjectGroup)
 		BEGIN_CONSTANTS
-		DEFINE_CONSTANT(DirectX::XMFLOAT4X4A, MVP_Matrix)
+		DEFINE_CONSTANT(DirectX::XMFLOAT4X4A, ModelViewProjectionMatrix)
 		END_CONSTANTS
 		END_SHADER_PARAMETER_GROUP(ObjectGroup)
 
 		BEGIN_SHADER_PARAMETERS(CascadedShadowMappingParameters)
-		SHADER_PARAMETER_GROUP(ObjectGroup, object)
+		SHADER_PARAMETER_GROUP(ObjectGroup, Object)
 		END_SHADER_PARAMETERS(CascadedShadowMappingParameters)
 
 		using Parameters = CascadedShadowMappingParameters;
@@ -28,9 +28,9 @@ namespace AT {
 
 		void SetParameters(RHI::CommandList command_list, ShaderParameters* parameters) const override {
 			CascadedShadowMappingParameters* params = static_cast<CascadedShadowMappingParameters*>(parameters);
-			params->object->constant_buffer->WriteData(params->object->constants);
-			m_Device->WriteDescriptorTable(params->object->m_descriptor_table, 0, 1, &params->object->constant_buffer->GetNative());
-			command_list->SetGraphicsRootDescriptorTable(0, params->object->m_descriptor_table);
+			params->Object->constant_buffer->WriteData(params->Object->constants);
+			m_Device->WriteDescriptorTable(params->Object->m_descriptor_table, 0, 1, &params->Object->constant_buffer->GetNative());
+			command_list->SetGraphicsRootDescriptorTable(0, params->Object->m_descriptor_table);
 		}
 
 		RHI::Shader GetVertexShader() const { return m_VertexShader; }

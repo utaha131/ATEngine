@@ -4,7 +4,7 @@ RHI (Rendering Hardware Interface) is library that implements a extensible abstr
 The library's interfaces is mostly based on DirectX 12's API and can be seen as a wrapper over DirectX 12 with some Vulkan restrictions to provide a common abstraction layer.
 
 # Tutorial
-Backend Initialization & Device Creation
+## Backend Initialization & Device Creation
 ```
 RHI::RenderBackend render_backend;
 bool DEBUG = true;
@@ -20,7 +20,7 @@ for (uint32_t i = 0; i < v_adapters.size(); ++i) {
 RHI::Device device;
 render_backend->CreateDevice(selected_adapter, device);
 ```
-Buffer Creation
+## Buffer Creation
 ```
 RHI::BufferDescription description;
 description.Size = 256;
@@ -28,7 +28,7 @@ description.UsageFlags = RHI::BufferUsageFlag::NONE;
 RHI:Buffer buffer;
 device->CreateCommittedBuffer(RHI::ResourceHeapType::DEFAULT, RHI::BufferState::COMMON, description, buffer);
 ```
-Texture Creation
+## Texture Creation
 ```
 RHI::TextureDescription description;
 description.Format = RHI::Format::R8G8B8A8_UNORM;

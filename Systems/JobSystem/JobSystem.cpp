@@ -88,9 +88,7 @@ namespace AT::JobSystem {
     }
 
     void WaitForCounter(JobCounter* counter, uint64_t value) {
-        while (*counter > value) {
-
-        }
+        while (*counter > value) {}
     }
 
     void Stop() {

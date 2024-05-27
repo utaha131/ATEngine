@@ -8,14 +8,14 @@ namespace AT {
 		BEGIN_SHADER_PARAMETER_GROUP(ComputeGroup)
 		BEGIN_CONSTANTS
 			DEFINE_CONSTANT(bool, IsSRGB)
-			DEFINE_CONSTANT(DirectX::XMFLOAT2, Output_Resolution)
+			DEFINE_CONSTANT(DirectX::XMFLOAT2, OutputResolution)
 		END_CONSTANTS
-		SHADER_PARAMETER(Texture2D, Source_Texture)
-		SHADER_PARAMETER(RWTexture2D, Output_Texture)
+		SHADER_PARAMETER(Texture2D, SourceTexture)
+		SHADER_PARAMETER(RWTexture2D, OutputTexture)
 		END_SHADER_PARAMETER_GROUP(ComputeGroup)
 
 		BEGIN_SHADER_PARAMETERS(GenerateMipsParameters)
-			SHADER_PARAMETER_GROUP(ComputeGroup, compute)
+			SHADER_PARAMETER_GROUP(ComputeGroup, Compute)
 			BEGIN_STATIC_SAMPLER(Sampler)
 				.Filter = RHI::Filter::MIN_MAG_LINEAR_MIP_POINT,
 				.AddressU = RHI::TextureAddressMode::CLAMP,
@@ -54,11 +54,11 @@ namespace AT {
 
 		void SetParameters(RHI::CommandList command_list, ShaderParameters* parameters) const {
 			Parameters* param = static_cast<Parameters*>(parameters);
-			static_cast<Parameters*>(parameters)->compute->constant_buffer->WriteData(static_cast<Parameters*>(parameters)->compute->constants);
-			m_Device->WriteDescriptorTable(param->compute->m_descriptor_table, 0, 1, &param->compute->constant_buffer->GetNative());
-			m_Device->WriteDescriptorTable(param->compute->m_descriptor_table, 1, 1, &param->compute->Source_Texture.srv);
-			m_Device->WriteDescriptorTable(param->compute->m_descriptor_table, 2, 1, &param->compute->Output_Texture.uav);
-			command_list->SetComputeRootDescriptorTable(0, static_cast<Parameters*>(parameters)->compute->m_descriptor_table);
+			static_cast<Parameters*>(parameters)->Compute->constant_buffer->WriteData(static_cast<Parameters*>(parameters)->Compute->constants);
+			m_Device->WriteDescriptorTable(param->Compute->m_descriptor_table, 0, 1, &param->Compute->constant_buffer->GetNative());
+			m_Device->WriteDescriptorTable(param->Compute->m_descriptor_table, 1, 1, &param->Compute->SourceTexture.srv);
+			m_Device->WriteDescriptorTable(param->Compute->m_descriptor_table, 2, 1, &param->Compute->OutputTexture.uav);
+			command_list->SetComputeRootDescriptorTable(0, static_cast<Parameters*>(parameters)->Compute->m_descriptor_table);
 		}
 	private:
 		RHI::Shader m_ComputeShader;

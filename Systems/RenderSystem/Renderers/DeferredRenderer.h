@@ -1,7 +1,8 @@
 #ifndef _AT_RENDER_SYSTEM_DEFERRED_RENDERER_H_
 #define _AT_RENDER_SYSTEM_DEFERRED_RENDERER_H_
 #include "Renderer.h"
-#include "../RenderTechniques.h"
+//#include "../RenderTechniques.h"
+#include "../RenderFeatures.h"
 #include "../GPUResourceManager.h"
 #include "../GPUConstantBuffer.h"
 #include <random>
@@ -94,7 +95,6 @@ namespace AT {
 				staging_buffer->GetRHIHandle()->CopyData(0, noise_data.data(), noise_data.size() * sizeof(float));
 				upload_batch.AddTextureUpload(m_SSAOResources.NoiseTexture, staging_buffer);
 				transition_batch.AddTextureTransition(m_SSAOResources.NoiseTexture, RHI::TextureState::COMMON);
-				// noise_data.data(), noise_data.size() * sizeof(float)
 				for (uint32_t i = 0; i < 64; ++i) {
 
 					DirectX::XMFLOAT3 sample = DirectX::XMFLOAT3();
@@ -162,83 +162,31 @@ namespace AT {
 			resource_manager.WaitForIdle();
 		}
 		void RenderLogic(FrameParameters& frame_parameters, Scene* scene) override {
-			//frame_parameters.Render_Info = scene->GenerateRenderInfo();
 			scene->GenerateRenderData(frame_parameters.RenderData);
 		}
 
 		void GPUExecution(FrameParameters& frame_parameters, FrameGraphBuilder& graph_builder, AT::GPUShaderManager& shader_manager, AT::GPUPipelineStateManager& pipeline_state_manager, AT::GPURootSignatureManager& root_signature_manager, RHI::Texture swap_chain_image) override {
-			AT::FrameGraphTextureRef depth_buffer = graph_builder.CreateTexture({
-			.Format = RHI::Format::D32_FLOAT_S8X24_UINT,
-			.Width = 1280,
-			.Height = 720,
-			.ArraySize = 1,
-				});
-
-			RHI::TextureClearValue clear_value = { .DepthAndStencil = {.Depth = 0.0f, .Stencil = 0 } };
-			depth_buffer->Description.Clear_Value = std::optional<RHI::TextureClearValue>(clear_value);
-
-			AT::FrameGraphDSVRef depth_buffer_dsv = graph_builder.CreateDSV(depth_buffer, { .FirstSliceIndex = 0, .ArraySize = 1 });
-
-			AT::RenderTechniques::DepthPass(
-				"Main_Depth_Pass",
-				graph_builder,
-				shader_manager,
-				pipeline_state_manager,
-				root_signature_manager,
-				1280,
-				720,
-				frame_parameters.RenderData,
-				depth_buffer_dsv
-			);
-
-			AT::FrameGraphTextureRef output_texture = graph_builder.CreateTexture({ .Format = RHI::Format::R16G16B16A16_FLOAT, .Width = 1280, .Height = 720, .ArraySize = 1 });
-			AT::FrameGraphSRVRef skybox_texture = graph_builder.CreateSRV(graph_builder.RegisterReadTexture(m_Skybox->GetRHIHandle(), RHI::TextureState::PIXEL_SHADER_RESOURCE), {.FirstSliceIndex = 0, .ArraySize = 6});
-			AT::RenderTechniques::Skybox(
-				"Main_Skybox_Pass",
-				graph_builder,
-				shader_manager,
-				pipeline_state_manager,
-				root_signature_manager,
-				frame_parameters.RenderData,
-				1280,
-				720,
-				skybox_texture,
-				graph_builder.CreateRTV(output_texture, { .FirstSliceIndex = 0, .ArraySize = 1, .MipSlice = 0 }));
-
-
-			AT::FrameGraphTextureRef base_color = graph_builder.CreateTexture({
-				.Format = RHI::Format::R8G8B8A8_UNORM_SRGB,
-				.Width = 1280,
-				.Height = 720,
-				.ArraySize = 1
-				});
-			AT::FrameGraphTextureRef normal = graph_builder.CreateTexture({
-				.Format = RHI::Format::R16G16B16A16_UNORM,
-				.Width = 1280,
-				.Height = 720,
-				.ArraySize = 1
-				});
-			AT::FrameGraphTextureRef surface = graph_builder.CreateTexture({
-				.Format = RHI::Format::R8G8B8A8_UNORM,
-				.Width = 1280,
-				.Height = 720,
-				.ArraySize = 1
-				});
-
-			AT::RenderTechniques::GBuffer(
-				"GBuffer_Pass",
-				graph_builder,
-				shader_manager,
-				pipeline_state_manager,
-				root_signature_manager,
-				1280,
-				720,
-				frame_parameters.RenderData,
-				graph_builder.CreateRTV(base_color, {}),
-				graph_builder.CreateRTV(normal, {}),
-				graph_builder.CreateRTV(surface, {}),
-				depth_buffer_dsv);
-
+			const uint32_t width = 1280, height = 720;
+			AT::FrameGraphTextureRef brdf_lut_texture = graph_builder.CreateTexture({ .Format = RHI::Format::R16G16_UNORM, .Width = 512, .Height = 512, .ArraySize = 1, .MipLevels = 1 });
+			AT::FrameGraphRTVRef brdf_lut_texture_rtv = graph_builder.CreateRTV(brdf_lut_texture, { .FirstSliceIndex = 0, .ArraySize = 1, .MipSlice = 0 });
+			AT::RenderFeatures::IntegrateBRDF("Main_BRDF_Integration", graph_builder, shader_manager, pipeline_state_manager, root_signature_manager, 512, 512, frame_parameters.RenderData, brdf_lut_texture_rtv);
+			AT::FrameGraphTextureRef depth_texture = graph_builder.CreateTexture({ .Format = RHI::Format::D32_FLOAT_S8X24_UINT, .Width = width, .Height = height, .ArraySize = 1, .MipLevels = 1, .Clear_Value = RHI::TextureClearValue{.DepthAndStencil = {.Depth = 0.0f }} });
+			AT::FrameGraphDSVRef depth_texture_dsv = graph_builder.CreateDSV(depth_texture, { .FirstSliceIndex = 0, .ArraySize = 1 });
+			AT::RenderFeatures::DepthPrePass("Main_Depth_PrePass", graph_builder, shader_manager, pipeline_state_manager, root_signature_manager, width, height, frame_parameters.RenderData, depth_texture_dsv);
+			AT::FrameGraphTextureRef skybox_texture = graph_builder.RegisterReadTexture(m_Skybox->GetRHIHandle(), RHI::TextureState::PIXEL_SHADER_RESOURCE);
+			AT::FrameGraphSRVRef skybox_texture_srv = graph_builder.CreateSRV(skybox_texture, { .FirstSliceIndex = 0, .ArraySize = 6, .MipLevels = 1 });
+			AT::FrameGraphTextureRef scene_color_texture = graph_builder.CreateTexture({ .Format = RHI::Format::R16G16B16A16_FLOAT, .Width = width, .Height = height, .ArraySize = 1, .MipLevels = 1 });
+			AT::FrameGraphRTVRef scene_color_texture_rtv = graph_builder.CreateRTV(scene_color_texture, { .FirstSliceIndex = 0, .ArraySize = 1, .MipSlice = 0 });
+			AT::RenderFeatures::Skybox("Main_Skybox", graph_builder, shader_manager, pipeline_state_manager, root_signature_manager, width, height, frame_parameters.RenderData, skybox_texture_srv, scene_color_texture_rtv);
+			AT::FrameGraphTextureRef skybox_irradiance_texture = graph_builder.CreateTexture({ .Format = RHI::Format::R16G16B16A16_FLOAT, .Width = 128, .Height = 128, .ArraySize = 6, .MipLevels = 1 });
+			AT::RenderFeatures::IrradianceMap("Main_Skybox_Irradiance", graph_builder, shader_manager, pipeline_state_manager, root_signature_manager, 128, 128, frame_parameters.RenderData, skybox_texture_srv, skybox_irradiance_texture);
+			AT::FrameGraphTextureRef base_color_texture = graph_builder.CreateTexture({ .Format = RHI::Format::R8G8B8A8_UNORM_SRGB, .Width = width, .Height = height, .ArraySize = 1, .MipLevels = 1 });
+			AT::FrameGraphTextureRef normal_texture = graph_builder.CreateTexture({ .Format = RHI::Format::R16G16B16A16_UNORM, .Width = width, .Height = height, .ArraySize = 1, .MipLevels = 1 });
+			AT::FrameGraphTextureRef surface_texture = graph_builder.CreateTexture({ .Format = RHI::Format::R8G8B8A8_UNORM, .Width = width, .Height = height, .ArraySize = 1, .MipLevels = 1 });
+			AT::FrameGraphRTVRef base_color_texture_rtv = graph_builder.CreateRTV(base_color_texture, { .FirstSliceIndex = 0, .ArraySize = 1, .MipSlice = 0 });
+			AT::FrameGraphRTVRef normal_texture_rtv = graph_builder.CreateRTV(normal_texture, { .FirstSliceIndex = 0, .ArraySize = 1, .MipSlice = 0 });
+			AT::FrameGraphRTVRef surface_texture_rtv = graph_builder.CreateRTV(surface_texture, { .FirstSliceIndex = 0, .ArraySize = 1, .MipSlice = 0 });
+			AT::RenderFeatures::GBuffer("Main_GBuffer", graph_builder, shader_manager, pipeline_state_manager, root_signature_manager, width, height, frame_parameters.RenderData, depth_texture_dsv, base_color_texture_rtv, normal_texture_rtv, surface_texture_rtv);
 			AT::FrameGraphSRVRef null_texture_srv = graph_builder.CreateSRV(graph_builder.RegisterReadTexture(m_NullTexture->GetRHIHandle(), RHI::TextureState::PIXEL_SHADER_RESOURCE), { .FirstSliceIndex = 0, .ArraySize = 1, .MipLevels = 1 });
 			AT::FrameGraphSRVRef null_cube_texture_srv = graph_builder.CreateSRV(graph_builder.RegisterReadTexture(m_NullCubeTexture->GetRHIHandle(), RHI::TextureState::PIXEL_SHADER_RESOURCE), { .FirstSliceIndex = 0, .ArraySize = 6, .MipLevels = 1 });
 			std::array<AT::FrameGraphSRVRef, 5> csm_srvs;
@@ -248,13 +196,17 @@ namespace AT {
 				switch (frame_parameters.RenderData.Lights[i].Type) {
 				case AT::LIGHT_TYPE_DIRECTIONAL:
 				{
-					csm_srvs[i] = graph_builder.CreateSRV(AT::RenderTechniques::CSM("CSM_Light[" + std::to_string(i) + "]", graph_builder, shader_manager, pipeline_state_manager, root_signature_manager, frame_parameters.RenderData, i, 4u), { .FirstSliceIndex = 0, .ArraySize = 4, .MipLevels = 1 });
+					AT::FrameGraphTextureRef csm_texture = graph_builder.CreateTexture({ .Format = RHI::Format::D16_UNORM, .Width = 4096, .Height = 4096, .ArraySize = 4, .MipLevels = 1, .Clear_Value = RHI::TextureClearValue{.DepthAndStencil= {.Depth = 0.0f}} });
+					AT::RenderFeatures::CascadedShadowMapping("Main_CSM", graph_builder, shader_manager, pipeline_state_manager, root_signature_manager, 4096, 4096, frame_parameters.RenderData, i, csm_texture);
+					csm_srvs[i] = graph_builder.CreateSRV(csm_texture, { .FirstSliceIndex = 0, .ArraySize = 4, .MipLevels = 1 });
 					osm_srvs[i] = null_cube_texture_srv;
 				}
 				break;
 				case AT::LIGHT_TYPE_POINT:
 				{
-					osm_srvs[i] = graph_builder.CreateSRV(AT::RenderTechniques::OSM("OSM_Light[" + std::to_string(i) + "]", graph_builder, shader_manager, pipeline_state_manager, root_signature_manager, frame_parameters.RenderData, i), { .FirstSliceIndex = 0, .ArraySize = 6, .MipLevels = 1 });
+					AT::FrameGraphTextureRef osm_texture = graph_builder.CreateTexture({ .Format = RHI::Format::D16_UNORM, .Width = 1024, .Height = 1024, .ArraySize = 6, .MipLevels = 1, .Clear_Value = RHI::TextureClearValue{.DepthAndStencil = {.Depth = 1.0f}} });;
+					AT::RenderFeatures::OmnidirectionalShadowMapping("Main_OSM", graph_builder, shader_manager, pipeline_state_manager, root_signature_manager, 1024, 1024, frame_parameters.RenderData, i, osm_texture);
+					osm_srvs[i] = graph_builder.CreateSRV(osm_texture, { .FirstSliceIndex = 0, .ArraySize = 6, .MipLevels = 1 });
 					csm_srvs[i] = null_texture_srv;
 				}
 				break;
@@ -266,53 +218,40 @@ namespace AT {
 				csm_srvs[i] = null_texture_srv;
 				frame_parameters.RenderData.Lights.push_back({});
 			}
-
-			AT::FrameGraphTextureRef SSAO_out = graph_builder.CreateTexture({
-				.Format = RHI::Format::R8_UNORM,
-				.Width = 1280,
-				.Height = 720,
-				.ArraySize = 1,
-				.MipLevels = 1
-				});
-
-			AT::FrameGraphSRVRef normal_srv = graph_builder.CreateSRV(normal, {});
-			AT::FrameGraphSRVRef depth_buffer_srv = graph_builder.CreateSRV(depth_buffer_dsv->TextureRef, {});
-
-			AT::RenderTechniques::SSAO("Main_SSAO_Pass", graph_builder, shader_manager, pipeline_state_manager, root_signature_manager, 1280, 720, frame_parameters.RenderData, graph_builder.CreateRTV(SSAO_out, { .FirstSliceIndex = 0, .ArraySize = 1, .MipSlice = 0 }), depth_buffer_srv, normal_srv, 4, m_SSAOResources.NoiseTexture->GetRHIHandle(), m_SSAOResources.KernelData);
-
-			AT::FrameGraphSRVRef prefiltered = null_cube_texture_srv;
-			AT::FrameGraphSRVRef brdf_lut = null_texture_srv;
-
+			AT::FrameGraphSRVRef base_color_texture_srv = graph_builder.CreateSRV(base_color_texture, { .FirstSliceIndex = 0, .ArraySize = 1, .MipLevels = 1 });
+			AT::FrameGraphSRVRef normal_texture_srv = graph_builder.CreateSRV(normal_texture, { .FirstSliceIndex = 0, .ArraySize = 1, .MipLevels = 1 });
+			AT::FrameGraphSRVRef surface_texture_srv = graph_builder.CreateSRV(surface_texture, { .FirstSliceIndex = 0, .ArraySize = 1, .MipLevels = 1 });
+			AT::FrameGraphSRVRef depth_texture_srv = graph_builder.CreateSRV(depth_texture, { .FirstSliceIndex = 0, .ArraySize = 1, .MipLevels = 1 });
+			AT::RenderFeatures::Deferred("Main_Deferred_Lighting", graph_builder, shader_manager, pipeline_state_manager, root_signature_manager, width, height, frame_parameters.RenderData, base_color_texture_srv, normal_texture_srv, surface_texture_srv, depth_texture_srv, csm_srvs, osm_srvs, scene_color_texture_rtv);
+			AT::FrameGraphTextureRef ssao_texture = graph_builder.CreateTexture({ .Format = RHI::Format::R8_UNORM, .Width = width, .Height = height, .ArraySize = 1, .MipLevels = 1 });
+			AT::FrameGraphRTVRef ssao_texture_rtv = graph_builder.CreateRTV(ssao_texture, { .FirstSliceIndex = 0, .ArraySize = 1, .MipSlice = 0 });
+			AT::RenderFeatures::SSAO("Main_SSAO", graph_builder, shader_manager, pipeline_state_manager, root_signature_manager, width, height, frame_parameters.RenderData, 4, m_SSAOResources.NoiseTexture->GetRHIHandle(), m_SSAOResources.KernelData, depth_texture_srv, normal_texture_srv, ssao_texture_rtv);
+			AT::FrameGraphTextureRef composition1 = graph_builder.CreateTexture({ .Format = RHI::Format::R16G16B16A16_FLOAT, .Width = width, .Height = height, .ArraySize = 1, .MipLevels = 1 });
+			AT::FrameGraphSRVRef scene_color_texture_srv = graph_builder.CreateSRV(scene_color_texture, { .FirstSliceIndex = 0, .ArraySize = 1, .MipLevels = 1 });
+			AT::FrameGraphSRVRef ssao_texture_srv = graph_builder.CreateSRV(ssao_texture, { .FirstSliceIndex = 0, .ArraySize = 1, .MipLevels = 1 });
+			AT::FrameGraphSRVRef skybox_irradiance_texture_srv = graph_builder.CreateSRV(skybox_irradiance_texture, { .FirstSliceIndex = 0, .ArraySize = 6, .MipLevels = 1 });
+			AT::FrameGraphUAVRef composition1_uav = graph_builder.CreateUAV(composition1, { .FirstSliceIndex = 0, .ArraySize = 1, .MipSlice = 0 });
+			AT::RenderFeatures::DiffuseIndirectPass("Main_Diffuse_Indirect", graph_builder, shader_manager, pipeline_state_manager, root_signature_manager, frame_parameters.RenderData, width, height, scene_color_texture_srv, base_color_texture_srv, normal_texture_srv, surface_texture_srv, ssao_texture_srv, skybox_irradiance_texture_srv, composition1_uav);
+			AT::FrameGraphTextureRef ssr_texture = graph_builder.CreateTexture({ .Format = RHI::Format::R16G16B16A16_FLOAT, .Width = width, .Height = height, .ArraySize = 1, .MipLevels = 1 });
+			AT::FrameGraphSRVRef composition1_srv = graph_builder.CreateSRV(composition1, { .FirstSliceIndex = 0, .ArraySize = 1, .MipLevels = 1 });
+			AT::RenderFeatures::SSR("Main_SSR", graph_builder, shader_manager, pipeline_state_manager, root_signature_manager, width, height, frame_parameters.RenderData, composition1_srv, depth_texture_srv, normal_texture_srv, surface_texture_srv, ssr_texture);
+			
+			AT::FrameGraphSRVRef reflection_probe_texture_srv = null_cube_texture_srv;
 			if (frame_parameters.RenderData.ReflectionProbe.has_value()) {
-				AT::RenderTechniques::ReflectionProbeOut output = AT::RenderTechniques::ReflectionProbe("ReflectionProbe", graph_builder, shader_manager, pipeline_state_manager, root_signature_manager, 128, 128, frame_parameters.RenderData, csm_srvs, osm_srvs, null_texture_srv, null_cube_texture_srv, m_SSAOResources.NoiseTexture->GetRHIHandle(), m_SSAOResources.KernelData, frame_parameters.ReflectionProbeRenderData, skybox_texture);
-				prefiltered = graph_builder.CreateSRV(output.prefiltered_map, { .FirstSliceIndex = 0, .ArraySize = 6, .MipLevels = 7 });
-				brdf_lut = graph_builder.CreateSRV(output.brdf_lut, { .FirstSliceIndex = 0, .ArraySize = 1, .MipLevels = 1 });
+				AT::FrameGraphTextureRef reflection_probe_texture = graph_builder.CreateTexture({ .Format = RHI::Format::R16G16B16A16_FLOAT, .Width = 128, .Height = 128, .ArraySize = 6, .MipLevels = 8 });
+				AT::RenderFeatures::ReflectionProbe("Main_Reflection_Probe", graph_builder, shader_manager, pipeline_state_manager, root_signature_manager, 128, 128, frame_parameters.RenderData, frame_parameters.ReflectionProbeRenderData, csm_srvs, osm_srvs, m_SSAOResources.NoiseTexture->GetRHIHandle(), m_SSAOResources.KernelData, skybox_texture_srv, skybox_irradiance_texture_srv, reflection_probe_texture);
+				reflection_probe_texture_srv = graph_builder.CreateSRV(reflection_probe_texture, { .FirstSliceIndex = 0, .ArraySize = 6, .MipLevels = 8 });
 			}
-
-			AT::FrameGraphTextureRef deferred_output = AT::RenderTechniques::Deferred(
-				"Main_Deferred_Pass",
-				graph_builder,
-				shader_manager,
-				pipeline_state_manager,
-				root_signature_manager,
-				1280,
-				720,
-				frame_parameters.RenderData,
-				graph_builder.CreateRTV(output_texture, { .FirstSliceIndex = 0, .ArraySize = 1 }),
-				graph_builder.CreateSRV(base_color, {}),
-				normal_srv,
-				graph_builder.CreateSRV(surface, {}),
-				depth_buffer_srv,
-				graph_builder.CreateSRV(SSAO_out, {}),
-				csm_srvs,
-				osm_srvs,
-				null_cube_texture_srv,//irradiance,
-				prefiltered,
-				brdf_lut
-			);
-
-			AT::FrameGraphTextureRef fg_swap_chain_image = graph_builder.RegisterWriteTexture(swap_chain_image);
-			AT::RenderTechniques::ToneMapping(graph_builder, shader_manager, pipeline_state_manager, root_signature_manager, deferred_output, fg_swap_chain_image);
+			AT::FrameGraphSRVRef ssr_texture_srv = graph_builder.CreateSRV(ssr_texture, { .FirstSliceIndex = 0, .ArraySize = 1, .MipLevels = 1 });
+			AT::FrameGraphTextureRef composition_final = graph_builder.CreateTexture({ .Format = RHI::Format::R16G16B16A16_FLOAT, .Width = width, .Height = height, .ArraySize = 1, .MipLevels = 1 });
+			AT::FrameGraphUAVRef composition_final_uav = graph_builder.CreateUAV(composition_final, { .FirstSliceIndex = 0, .ArraySize = 1, .MipSlice = 0 });
+			AT::FrameGraphSRVRef brdf_lut_texture_srv = graph_builder.CreateSRV(brdf_lut_texture, { .FirstSliceIndex = 0, .ArraySize = 1, . MipLevels = 1 });
+			AT::RenderFeatures::ReflectionPass("Main_Reflection", graph_builder, shader_manager, pipeline_state_manager, root_signature_manager, width, height, frame_parameters.RenderData, composition1_srv, base_color_texture_srv, normal_texture_srv, surface_texture_srv, depth_texture_srv, ssao_texture_srv, ssr_texture_srv, brdf_lut_texture_srv, reflection_probe_texture_srv, composition_final_uav);
+			AT::FrameGraphTextureRef final_image = graph_builder.RegisterWriteTexture(swap_chain_image);
+			AT::FrameGraphRTVRef final_image_rtv = graph_builder.CreateRTV(final_image, { .FirstSliceIndex = 0, .ArraySize = 1, .MipSlice = 0 });
+			AT::FrameGraphSRVRef composition_final_srv = graph_builder.CreateSRV(composition_final, {.FirstSliceIndex = 0, .ArraySize = 1, .MipLevels = 1});
+			AT::RenderFeatures::ToneMapping("Main_Tone_Mapping", graph_builder, shader_manager, pipeline_state_manager, root_signature_manager, 1280, 720, frame_parameters.RenderData, composition_final_srv, final_image_rtv);
+			
 			graph_builder.Compile();
 			graph_builder.Execute();
 		}

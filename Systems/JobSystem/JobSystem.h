@@ -3,7 +3,6 @@
 
 #include <functional>
 #include <mutex>
-// Fixed size very simple thread safe ring buffer
 #include <atomic>
 namespace AT::JobSystem {
     typedef std::atomic<uint64_t> JobCounter;
@@ -53,27 +52,16 @@ namespace AT::JobSystem {
     class SpinLock {
     public:
         void lock() {
-            /*for (;;) {
-                if (!m_lock.exchange(true, std::memory_order_acquire)) {
-                    return;
-                }
-                while (m_lock.load(std::memory_order_relaxed)) {
-                    _mm_pause();
-                }
-            }*/
             while (true) {
                 while (m_lock) {
                     _mm_pause();
                 }
-                // exit only if we change from false, to true
-                // i.e. until we aquire the (spin)lock
                 if (!m_lock.exchange(true))
                     break;
             }
         }
 
         void unlock() {
-            //m_lock.store(false, std::memory_order_release);
             m_lock.store(false);
         }
 

@@ -7,17 +7,18 @@ ATEngine is a cross-platform real time rendering engine. The goal of this projec
 - Render Graph Architecture & Multihreaded Command List Recording.
 - Multithreaded Job System.
 - Physically Based Rendering (PBR) Material System.
-- Deferred Shading, SSAO, Directional and Point Light Shadow Mapping, Reflection & Light Probes, etc.
+- Deferred Shading, SSAO, Directional and Point Light Shadow Mapping, Reflection & Light Probes, Screen-Space Reflections etc.
+- Ray-Tracing is Coming!!!
 
 # Design
-Architecture Design
+## Architecture Design
 ![Architecture Design](https://raw.githubusercontent.com/utaha131/ATEngine/main/Screenshots/Architecture_Image.jpg)
 
 # Implementation Status
 | Feature | Description | Status|
 | :---    |    :---:    |  ---: |
 | Rendering Hardware Interface (RHI) | [More Details](https://github.com/utaha131/ATEngine/tree/main/RHI) | Passing |
-| Render Graph Architecture | Frame task graph system for scheduling render operations. |  Working |
+| Render Graph Architecture | Frame task graph system for scheduling render operations. |  Passing |
 | PBR Materials | PBR Materials with BRDF based on UE4 | Completed |
 | Forward Shading | Forward Rendering Pipeline. | Completed |
 | Deferred Shading | Deferred Rendering Pipeline. | Completed |
@@ -30,24 +31,28 @@ Architecture Design
 | Tone Mapping | Reinhard & ACES Film | Completed |
 | Job System | Multithreaded Job System based on Naughty Dog's presentation. | Completed |
 | Parallel Command List Recording | Multithreaded Rendering. | Completed |
-| SSR | Screen-Space Reflections. | In Progess |
+| SSR | Screen-Space Reflections. | Passing. Stochastic SSR Coming. |
+| Ray-Tracing Pipline | | In Progress. |
+| TAA | Temporal Anti-Aliasing. | TODO |
 | GTAO |  | TODO |
 | Atmospheric Scattering |  | TODO |
-| TAA | Temporal Anti-Aliasing. | TODO |
-| Scene Loading | Saving and Loading Custom Scenes | TODO |
-| Ray-Tracing Pipline | | TODO |
+| Scene Loading | Editing, Saving and Loading Custom Scenes | TODO |
 
 # ScreenShots
-DirectX 12 & Vulkan Support
+## DirectX 12 & Vulkan Support
 ![DirectX 12 & Vulkan Support](https://raw.githubusercontent.com/utaha131/ATEngine/main/Screenshots/DX12VK.jpg)
-Cascaded Shadow Mapping
+## Cascaded Shadow Mapping
 ![Cascaded Shadow Mapping](https://raw.githubusercontent.com/utaha131/ATEngine/main/Screenshots/CSM.jpg)
-Point Light & Shadow Mapping
+## Point Light & Shadow Mapping
 ![Point Light & Shadow Mapping](https://raw.githubusercontent.com/utaha131/ATEngine/main/Screenshots/OSM.jpg)
-Reflection Probe
+## Reflection Probe
 ![Reflection Probe](https://raw.githubusercontent.com/utaha131/ATEngine/main/Screenshots/ReflectionProbe.jpg)
-SSAO
+## SSAO
 ![SSAO](https://raw.githubusercontent.com/utaha131/ATEngine/main/Screenshots/SSAO.jpg)
+## SSR
+![SSR](https://raw.githubusercontent.com/utaha131/ATEngine/main/Screenshots/SSR.jpg)
+## Screen-Space Reflection Floor Demo
+![SSR Floot Demo](https://raw.githubusercontent.com/utaha131/ATEngine/main/Screenshots/SSRFloor.jpg)
 
 # Dependencies
 - [Vulkan](https://www.vulkan.org/)
@@ -70,3 +75,4 @@ SSAO
 
 ## Shading and Rendering techniques
 - [Unreal Engine PBR](https://cdn2.unrealengine.com/Resources/files/2013SiggraphPresentationsNotes-26915738.pdf)
+- [GPU Gems Series](https://developer.nvidia.com/gpugems/gpugems/contributors)

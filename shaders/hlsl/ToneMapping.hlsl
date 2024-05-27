@@ -12,7 +12,7 @@ PixelIn VS(uint VertexID : SV_VertexID) {
 	return output;
 }
 
-[[vk::binding(0, 0)]] Texture2D g_Frame : register(t0);
+[[vk::binding(0, 0)]] Texture2D g_InputTexture : register(t0);
 [[vk::binding(1, 0)]] SamplerState g_Sampler : register(s0);
 
 float3 ACESFilm(float3 x)
@@ -27,8 +27,7 @@ float3 ACESFilm(float3 x)
 
 
 float4 PS(PixelIn input) : SV_Target {
-	const float gamma = 2.2f;
-	float3 color =  g_Frame.Sample(g_Sampler, input.UV.xy).rgb;
+	float3 color =  g_InputTexture.Sample(g_Sampler, input.UV.xy).rgb;
 	//float3 ldr = color.rgb / (color.rgb + float3(1.0f, 1.0f, 1.0f));
 	float3 ldr = ACESFilm(color.rgb);
 	return float4(ldr.rgb, 1.0f);

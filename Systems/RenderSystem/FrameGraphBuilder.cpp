@@ -15,10 +15,10 @@ namespace AT {
 		fb_description.RenderPass = rhi_render_pass;
 
 		const FrameGraphRenderPassIO& io = render_pass->GetIO();
-		for (uint32_t i = 0; i < io.m_render_targets.size(); ++i) {
-			fb_description.RenderTargetViews.push_back(render_pass->GetIO().m_render_targets[i]->RHIHandle);
-			if (io.m_render_targets[i]->TextureRef->Description.Clear_Value.has_value()) {
-				begin_info.ClearValues.push_back(io.m_render_targets[i]->TextureRef->Description.Clear_Value.value());
+		for (uint32_t i = 0; i < io.m_RenderTargets.size(); ++i) {
+			fb_description.RenderTargetViews.push_back(render_pass->GetIO().m_RenderTargets[i]->RHIHandle);
+			if (io.m_RenderTargets[i]->TextureRef->Description.Clear_Value.has_value()) {
+				begin_info.ClearValues.push_back(io.m_RenderTargets[i]->TextureRef->Description.Clear_Value.value());
 			}
 			else {
 				RHI::TextureClearValue value;
@@ -28,14 +28,14 @@ namespace AT {
 				value.Color[3] = 0;
 				begin_info.ClearValues.emplace_back(value);
 			}
-			fb_description.Width = (std::max)(fb_description.Width, render_pass->GetIO().m_render_targets[i]->TextureRef->RHIHandle->GetDescription().Width >> render_pass->GetIO().m_render_targets[i]->Description.MipSlice);
-			fb_description.Height = (std::max)(fb_description.Height, render_pass->GetIO().m_render_targets[i]->TextureRef->RHIHandle->GetDescription().Height >> render_pass->GetIO().m_render_targets[i]->Description.MipSlice);
+			fb_description.Width = (std::max)(fb_description.Width, render_pass->GetIO().m_RenderTargets[i]->TextureRef->RHIHandle->GetDescription().Width >> render_pass->GetIO().m_RenderTargets[i]->Description.MipSlice);
+			fb_description.Height = (std::max)(fb_description.Height, render_pass->GetIO().m_RenderTargets[i]->TextureRef->RHIHandle->GetDescription().Height >> render_pass->GetIO().m_RenderTargets[i]->Description.MipSlice);
 
 		}
-		if (io.m_depth_buffer.has_value()) {
-			fb_description.DepthStencilView = io.m_depth_buffer.value()->RHIHandle;
-			if (io.m_depth_buffer.value()->TextureRef->Description.Clear_Value.has_value()) {
-				begin_info.DepthClearValue = io.m_depth_buffer.value()->TextureRef->Description.Clear_Value.value();
+		if (io.m_DepthBuffer.has_value()) {
+			fb_description.DepthStencilView = io.m_DepthBuffer.value()->RHIHandle;
+			if (io.m_DepthBuffer.value()->TextureRef->Description.Clear_Value.has_value()) {
+				begin_info.DepthClearValue = io.m_DepthBuffer.value()->TextureRef->Description.Clear_Value.value();
 			}
 			else {
 				RHI::TextureClearValue value;
@@ -43,8 +43,8 @@ namespace AT {
 				value.DepthAndStencil.Stencil = 0;
 				begin_info.DepthClearValue.emplace(value);
 			}
-			fb_description.Width = (std::max)(fb_description.Width, io.m_depth_buffer.value()->TextureRef->RHIHandle->GetDescription().Width);
-			fb_description.Height = (std::max)(fb_description.Height, io.m_depth_buffer.value()->TextureRef->RHIHandle->GetDescription().Height);
+			fb_description.Width = (std::max)(fb_description.Width, io.m_DepthBuffer.value()->TextureRef->RHIHandle->GetDescription().Width);
+			fb_description.Height = (std::max)(fb_description.Height, io.m_DepthBuffer.value()->TextureRef->RHIHandle->GetDescription().Height);
 		}
 		device->CreateFrameBuffer(fb_description, begin_info.FrameBuffer);
 
@@ -70,9 +70,6 @@ namespace AT {
 		}
 		command_lists[command_list_id] = command_list;
 		command_list->Reset(RHI_NULL_HANDLE);
-		if (j == 0 && render_pass->GetPipelineType() == FrameGraphRenderPass::PIPELINE_TYPE::GRAPHICS) {
-			command_list->ResourceBarrier(start_barriers.size(), start_barriers.data());
-		}
 		BuildRenderPassCommandList(device, command_list, render_pass, rhi_render_pass);
 		command_list->Close();
 	}
@@ -99,9 +96,10 @@ namespace AT {
 		m_Device(device),
 		m_RHIResourceAllocator(FrameGraphRHIResourceAllocator(m_Device)),
 		m_CommandList(command_list),
-		m_CurrentFenceValue(0ull)
+		m_GraphicsCurrentFenceValue(0ull),
+		m_ComputeCurrentFenceValue(0ull)
 	{
-		m_256_pool = new FrameGraphCBufferPool<256, 4500>(m_RHIResourceAllocator, m_Device);
+		m_256_pool = new FrameGraphCBufferPool<256, 3000>(m_RHIResourceAllocator, m_Device);
 		m_2048_pool = new FrameGraphCBufferPool<2048, 500>(m_RHIResourceAllocator, m_Device);
 		for (uint32_t i = 0u; i < JobSystem::Threads(); ++i) {
 			FrameGraphRenderThreadCommandObjects* command_objects = new FrameGraphRenderThreadCommandObjects{};
@@ -113,11 +111,14 @@ namespace AT {
 			}
 			m_RenderThreadCommandObjects.emplace_back(command_objects);
 		}
-		m_Device->CreateFence(0ull, m_Fence);
+		m_Device->CreateFence(0ull, m_GraphicsFence);
+		m_Device->CreateFence(0ull, m_ComputeFence);
 	}
 
+	//Allocate resources needed for frame.
 	void FrameGraphBuilder::CreateResources() {
 		for (uint32_t i = 0; i < m_Textures.size(); ++i) {
+			//Check Texture Cache.
 			FrameGraphTextureRef cached_texture_ref = nullptr;
 			for (auto cached_texture : m_texture_cache) {
 				if (m_Textures[i]->Description == cached_texture->Description) {
@@ -153,6 +154,7 @@ namespace AT {
 		for (uint32_t i = 0u; i < m_UAVs.size(); ++i) {
 			RHI::UnorderedAccessViewDescription uav_description = FrameGraphConvertUAVDescription(m_UAVs[i]->Description, m_UAVs[i]->TextureRef->Description.Format);
 			m_Device->CreateUnorderedAccessView(m_UAVs[i]->TextureRef->RHIHandle, uav_description, m_UAVs[i]->RHIHandle);
+
 		}
 
 		m_RHIRenderPasses = std::vector<RHI::RenderPass>(m_RenderPasses.size());
@@ -160,24 +162,24 @@ namespace AT {
 			// Create RHI RenderPass.
 			RHI::RenderPassDescription render_pass_description;
 			const FrameGraphRenderPassIO io = m_RenderPasses[i]->GetIO();
-			for (uint32_t j = 0; j < io.m_render_targets.size(); ++j) {
+			for (uint32_t j = 0; j < io.m_RenderTargets.size(); ++j) {
 				RHI::RenderPassAttachment attachment;
-				attachment.Format = io.m_render_targets[j]->TextureRef->Description.Format;
+				attachment.Format = io.m_RenderTargets[j]->TextureRef->Description.Format;
 				attachment.InitialState = RHI::TextureState::RENDER_TARGET;
 				attachment.FinalState = RHI::TextureState::RENDER_TARGET;
-				attachment.LoadOp = m_RenderPasses[i]->GetIO().GetLoadOp(io.m_render_targets[j]);
+				attachment.LoadOp = m_RenderPasses[i]->GetIO().GetLoadOp(io.m_RenderTargets[j]);
 				attachment.StoreOp = RHI::RenderPassAttachment::StoreOperation::STORE;
 				attachment.StencilLoadOp = RHI::RenderPassAttachment::LoadOperation::DONT_CARE;
 				attachment.StencilStoreOp = RHI::RenderPassAttachment::StoreOperation::DONT_CARE;
 				render_pass_description.Attachments.emplace_back(attachment);
 			}
 
-			if (io.m_depth_buffer.has_value()) {
+			if (io.m_DepthBuffer.has_value()) {
 				RHI::RenderPassAttachment attachment;
-				attachment.Format = m_RenderPasses[i]->GetIO().m_depth_buffer.value()->TextureRef->Description.Format;
+				attachment.Format = m_RenderPasses[i]->GetIO().m_DepthBuffer.value()->TextureRef->Description.Format;
 				attachment.InitialState = RHI::TextureState::DEPTH_WRITE;
 				attachment.FinalState = RHI::TextureState::DEPTH_WRITE;
-				attachment.LoadOp = m_RenderPasses[i]->GetIO().GetLoadOp(io.m_depth_buffer.value());
+				attachment.LoadOp = m_RenderPasses[i]->GetIO().GetLoadOp(io.m_DepthBuffer.value());
 				attachment.StoreOp = RHI::RenderPassAttachment::StoreOperation::STORE;
 				attachment.StencilLoadOp = RHI::RenderPassAttachment::LoadOperation::DONT_CARE;
 				attachment.StencilStoreOp = RHI::RenderPassAttachment::StoreOperation::DONT_CARE;
@@ -200,13 +202,14 @@ namespace AT {
 					continue;
 				}
 				const FrameGraphRenderPassIO& io2 = m_RenderPasses[j]->GetIO();
-				for (auto read_texture : io2.m_read_textures) {
-					if (io.m_write_textures.contains(read_texture)) {
+				for (auto read_texture : io2.m_ReadTextures) {
+					if (io.m_WriteTextures.contains(read_texture)) {
 						adjacency_list[i].insert(j);
 					}
 				}
-				if (io.m_depth_buffer.has_value()) {
-					if (io2.m_depth_buffer.has_value() && io2.m_depth_buffer_is_dependency && io2.m_depth_buffer.value() == io.m_depth_buffer.value()) {
+				
+				if (io.m_DepthBuffer.has_value()) {
+					if (io2.m_DepthBuffer.has_value() && io2.DepthBufferIsDependency() && io2.m_DepthBuffer.value() == io.m_DepthBuffer.value()) {
 						adjacency_list[i].insert(j);
 					}
 				}
@@ -238,87 +241,87 @@ namespace AT {
 			if (m_RenderPasses[i]->GetPipelineType() == FrameGraphRenderPass::PIPELINE_TYPE::GRAPHICS) {
 				++m_DependencyLevels[m_RenderPassIDToDependencyLevels[i]].GraphicsPassCount;
 
-			}
-			else {
+			} else {
 				++m_DependencyLevels[m_RenderPassIDToDependencyLevels[i]].ComputePassCount;
 			}
 		}
 
-		////Debug Print.
-		//for (uint32_t i = 0u; i < m_DependencyLevels.size(); ++i) {
-		//	OutputDebugString((L"Dependency Level [" + std::to_wstring(i) + L"]\t").c_str());
-		//	for (uint32_t j = 0u; j < m_DependencyLevels[i].RenderPassIDs.size(); ++j) {
-		//		const std::string& name = m_RenderPasses[m_DependencyLevels[i].RenderPassIDs[j]]->GetName();
-		//		OutputDebugString((std::wstring(name.begin(), name.end()) + L'\t').c_str());
-		//	}
-		//	OutputDebugString(L"\n");
-		//}
-		
+#ifdef _DEBUG
+		//Debug Print.
+		for (uint32_t i = 0u; i < m_DependencyLevels.size(); ++i) {
+			OutputDebugString((L"Dependency Level [" + std::to_wstring(i) + L"]\t").c_str());
+			for (uint32_t j = 0u; j < m_DependencyLevels[i].RenderPassIDs.size(); ++j) {
+				const std::string& name = m_RenderPasses[m_DependencyLevels[i].RenderPassIDs[j]]->GetName();
+				OutputDebugString((std::wstring(name.begin(), name.end()) + L'\t').c_str());
+			}
+			OutputDebugString(L"\n");
+		}
+#endif
 
 		//Compute Transitions.
 		for (uint32_t i = 0u; i < m_DependencyLevels.size(); ++i) {
 			for (uint32_t j = 0u; j < m_DependencyLevels[i].RenderPassIDs.size(); ++j) {
 				const FrameGraphRenderPassIO& current_io = m_RenderPasses[m_DependencyLevels[i].RenderPassIDs[j]]->GetIO();
-				for (uint32_t k = 0u; k < current_io.m_render_targets.size(); ++k) {
-					if (current_io.m_render_targets[k]->TextureRef->FinalState != RHI::TextureState::RENDER_TARGET) {
+				for (uint32_t k = 0u; k < current_io.m_RenderTargets.size(); ++k) {
+					if (current_io.m_RenderTargets[k]->TextureRef->FinalState != RHI::TextureState::RENDER_TARGET) {
 						RHI::ResourceBarrier barrier;
 						barrier.ResourceBarrierType = RHI::ResourceBarrierType::TRANSITION_BARRIER_TEXTURE;
-						barrier.TransitionBarrierTexture.Texture = current_io.m_render_targets[k]->TextureRef->RHIHandle;
+						barrier.TransitionBarrierTexture.Texture = current_io.m_RenderTargets[k]->TextureRef->RHIHandle;
 						barrier.TransitionBarrierTexture.Subresource = RHI::SUBRESOURCE_ALL;
-						barrier.TransitionBarrierTexture.InitialState = current_io.m_render_targets[k]->TextureRef->FinalState;
+						barrier.TransitionBarrierTexture.InitialState = current_io.m_RenderTargets[k]->TextureRef->FinalState;
 						barrier.TransitionBarrierTexture.FinalState = RHI::TextureState::RENDER_TARGET;
-						current_io.m_render_targets[k]->TextureRef->FinalState = RHI::TextureState::RENDER_TARGET;
+						current_io.m_RenderTargets[k]->TextureRef->FinalState = RHI::TextureState::RENDER_TARGET;
 						m_DependencyLevels[i].StartBarriers.emplace_back(barrier);
 					}
 				}
-				for (uint32_t k = 0u; k < current_io.m_shader_resources.size(); ++k) {
-					if (current_io.m_shader_resources[k] != nullptr && current_io.m_shader_resources[k]->TextureRef->FinalState != RHI::TextureState::PIXEL_SHADER_RESOURCE) {
+				for (uint32_t k = 0u; k < current_io.m_ShaderResources.size(); ++k) {
+					if (current_io.m_ShaderResources[k] != nullptr && current_io.m_ShaderResources[k]->TextureRef->FinalState != RHI::TextureState::PIXEL_SHADER_RESOURCE) {
 						RHI::ResourceBarrier barrier;
 						barrier.ResourceBarrierType = RHI::ResourceBarrierType::TRANSITION_BARRIER_TEXTURE;
-						barrier.TransitionBarrierTexture.Texture = current_io.m_shader_resources[k]->TextureRef->RHIHandle;
+						barrier.TransitionBarrierTexture.Texture = current_io.m_ShaderResources[k]->TextureRef->RHIHandle;
 						barrier.TransitionBarrierTexture.Subresource = RHI::SUBRESOURCE_ALL;
-						barrier.TransitionBarrierTexture.InitialState = current_io.m_shader_resources[k]->TextureRef->FinalState;
+						barrier.TransitionBarrierTexture.InitialState = current_io.m_ShaderResources[k]->TextureRef->FinalState;
 						barrier.TransitionBarrierTexture.FinalState = RHI::TextureState::PIXEL_SHADER_RESOURCE;
-						current_io.m_shader_resources[k]->TextureRef->FinalState = RHI::TextureState::PIXEL_SHADER_RESOURCE;
+						current_io.m_ShaderResources[k]->TextureRef->FinalState = RHI::TextureState::PIXEL_SHADER_RESOURCE;
 						m_DependencyLevels[i].StartBarriers.emplace_back(barrier);
 					}
 				}
-				if (current_io.m_depth_buffer.has_value() && current_io.m_depth_buffer.value()->TextureRef->FinalState != RHI::TextureState::DEPTH_WRITE) {
+				if (current_io.m_DepthBuffer.has_value() && current_io.m_DepthBuffer.value()->TextureRef->FinalState != RHI::TextureState::DEPTH_WRITE) {
 					RHI::ResourceBarrier barrier;
 					barrier.ResourceBarrierType = RHI::ResourceBarrierType::TRANSITION_BARRIER_TEXTURE;
-					barrier.TransitionBarrierTexture.Texture = current_io.m_depth_buffer.value()->TextureRef->RHIHandle;
+					barrier.TransitionBarrierTexture.Texture = current_io.m_DepthBuffer.value()->TextureRef->RHIHandle;
 					barrier.TransitionBarrierTexture.Subresource = RHI::SUBRESOURCE_ALL;
-					barrier.TransitionBarrierTexture.InitialState = current_io.m_depth_buffer.value()->TextureRef->FinalState;
+					barrier.TransitionBarrierTexture.InitialState = current_io.m_DepthBuffer.value()->TextureRef->FinalState;
 					barrier.TransitionBarrierTexture.FinalState = RHI::TextureState::DEPTH_WRITE;
-					current_io.m_depth_buffer.value()->TextureRef->FinalState = RHI::TextureState::DEPTH_WRITE;
+					current_io.m_DepthBuffer.value()->TextureRef->FinalState = RHI::TextureState::DEPTH_WRITE;
 					m_DependencyLevels[i].StartBarriers.emplace_back(barrier);
 				}
-				for (uint32_t k = 0u; k < current_io.m_unordered_access_view_read.size(); ++k) {
-					if (current_io.m_unordered_access_view_read[k] != nullptr && current_io.m_unordered_access_view_read[k]->TextureRef->FinalState != RHI::TextureState::UNORDERED_ACCESS) {
+				for (uint32_t k = 0u; k < current_io.m_UnorderedAccessViewRead.size(); ++k) {
+					if (current_io.m_UnorderedAccessViewRead[k] != nullptr && current_io.m_UnorderedAccessViewRead[k]->TextureRef->FinalState != RHI::TextureState::UNORDERED_ACCESS) {
 						RHI::ResourceBarrier barrier;
 						barrier.ResourceBarrierType = RHI::ResourceBarrierType::TRANSITION_BARRIER_TEXTURE;
-						barrier.TransitionBarrierTexture.Texture = current_io.m_unordered_access_view_read[k]->TextureRef->RHIHandle;
+						barrier.TransitionBarrierTexture.Texture = current_io.m_UnorderedAccessViewRead[k]->TextureRef->RHIHandle;
 						barrier.TransitionBarrierTexture.Subresource = RHI::SUBRESOURCE_ALL;
-						barrier.TransitionBarrierTexture.InitialState = current_io.m_unordered_access_view_read[k]->TextureRef->FinalState;
+						barrier.TransitionBarrierTexture.InitialState = current_io.m_UnorderedAccessViewRead[k]->TextureRef->FinalState;
 						barrier.TransitionBarrierTexture.FinalState = RHI::TextureState::UNORDERED_ACCESS;
-						current_io.m_shader_resources[k]->TextureRef->FinalState = RHI::TextureState::UNORDERED_ACCESS;
+						current_io.m_ShaderResources[k]->TextureRef->FinalState = RHI::TextureState::UNORDERED_ACCESS;
 						m_DependencyLevels[i].StartBarriers.emplace_back(barrier);
 					}
 				}
-				for (uint32_t k = 0u; k < current_io.m_unordered_access_view_write.size(); ++k) {
-					if (current_io.m_unordered_access_view_write[k] != nullptr && current_io.m_unordered_access_view_write[k]->TextureRef->FinalState != RHI::TextureState::UNORDERED_ACCESS) {
+				for (uint32_t k = 0u; k < current_io.m_UnorderedAccessViewWrite.size(); ++k) {
+					if (current_io.m_UnorderedAccessViewWrite[k] != nullptr && current_io.m_UnorderedAccessViewWrite[k]->TextureRef->FinalState != RHI::TextureState::UNORDERED_ACCESS) {
 						RHI::ResourceBarrier barrier;
 						barrier.ResourceBarrierType = RHI::ResourceBarrierType::TRANSITION_BARRIER_TEXTURE;
-						barrier.TransitionBarrierTexture.Texture = current_io.m_unordered_access_view_write[k]->TextureRef->RHIHandle;
+						barrier.TransitionBarrierTexture.Texture = current_io.m_UnorderedAccessViewWrite[k]->TextureRef->RHIHandle;
 						barrier.TransitionBarrierTexture.Subresource = RHI::SUBRESOURCE_ALL;
-						barrier.TransitionBarrierTexture.InitialState = current_io.m_unordered_access_view_write[k]->TextureRef->FinalState;
+						barrier.TransitionBarrierTexture.InitialState = current_io.m_UnorderedAccessViewWrite[k]->TextureRef->FinalState;
 						barrier.TransitionBarrierTexture.FinalState = RHI::TextureState::UNORDERED_ACCESS;
-						current_io.m_unordered_access_view_write[k]->TextureRef->FinalState = RHI::TextureState::UNORDERED_ACCESS;
+						current_io.m_UnorderedAccessViewWrite[k]->TextureRef->FinalState = RHI::TextureState::UNORDERED_ACCESS;
 						m_DependencyLevels[i].StartBarriers.emplace_back(barrier);
 					}
 				}
 
-				//Compute Cross Queue Syncrhonization.
+				//Compute dependency level waits for cross queue syncrhonization.
 				uint32_t render_pass_id = m_DependencyLevels[i].RenderPassIDs[j];
 				FrameGraphRenderPass::PIPELINE_TYPE pipeline_type = m_RenderPasses[render_pass_id]->GetPipelineType();
 				for (auto k : adjacency_list[render_pass_id]) {
@@ -334,12 +337,17 @@ namespace AT {
 			}
 		}
 
+		//Compute queue signal values for cross queue syncrhonization.
+		uint32_t graphics_last_signaled = 0;
+		uint32_t compute_last_signaled = 0;
 		for (uint32_t i = 0u; i < m_DependencyLevels.size(); ++i) {
-			if (m_DependencyLevels[i].GraphicsWaitForDependencyLevel > -1) {
-				m_DependencyLevels[m_DependencyLevels[i].GraphicsWaitForDependencyLevel].SignalComputeValue = ++m_CurrentFenceValue;
+			if (m_DependencyLevels[i].GraphicsWaitForDependencyLevel > -1 && m_DependencyLevels[i].GraphicsWaitForDependencyLevel > compute_last_signaled) {
+				m_DependencyLevels[m_DependencyLevels[i].GraphicsWaitForDependencyLevel].SignalComputeValue = ++m_ComputeCurrentFenceValue;
+				compute_last_signaled = m_DependencyLevels[i].GraphicsWaitForDependencyLevel;
 			}
-			if (m_DependencyLevels[i].ComputeWaitForDependencyLevel > -1) {
-				m_DependencyLevels[m_DependencyLevels[i].ComputeWaitForDependencyLevel].SignalGraphicsValue = ++m_CurrentFenceValue;
+			if (m_DependencyLevels[i].ComputeWaitForDependencyLevel > -1 && m_DependencyLevels[i].ComputeWaitForDependencyLevel > graphics_last_signaled) {
+				m_DependencyLevels[m_DependencyLevels[i].ComputeWaitForDependencyLevel].SignalGraphicsValue = ++m_GraphicsCurrentFenceValue;
+				graphics_last_signaled = m_DependencyLevels[i].ComputeWaitForDependencyLevel;
 			}
 		}
 	}
@@ -348,29 +356,28 @@ namespace AT {
 		AT::JobSystem::JobCounter* lvl_counter = nullptr;
 
 		for (uint32_t i = 0; i < m_DependencyLevels.size(); ++i) {
-			//Check if Cross Queue Wait is Needed.
+			//Determine if cross queue wait is needed.
 			if (m_DependencyLevels[i].GraphicsWaitForDependencyLevel > -1) {
-				m_Device->QueueWait(RHI::CommandType::DIRECT, m_Fence, m_DependencyLevels[m_DependencyLevels[i].GraphicsWaitForDependencyLevel].SignalComputeValue);
+				m_Device->QueueWait(RHI::CommandType::DIRECT, m_ComputeFence, m_DependencyLevels[m_DependencyLevels[i].GraphicsWaitForDependencyLevel].SignalComputeValue);
 			}
 			if (m_DependencyLevels[i].ComputeWaitForDependencyLevel > -1) {
-				m_Device->QueueWait(RHI::CommandType::COMPUTE, m_Fence, m_DependencyLevels[m_DependencyLevels[i].ComputeWaitForDependencyLevel].SignalGraphicsValue);
+				m_Device->QueueWait(RHI::CommandType::COMPUTE, m_GraphicsFence, m_DependencyLevels[m_DependencyLevels[i].ComputeWaitForDependencyLevel].SignalGraphicsValue);
 			}
 
+			//Multi-threaded execution of all depenedency levels before the last one.
 			if (i < m_DependencyLevels.size() - 1) {
 				//Splite work by executing each RenderPass per job system thread.
 				std::vector<std::function<void(uint32_t)>> m_jobs = std::vector<std::function<void(uint32_t)>>(m_DependencyLevels[i].RenderPassIDs.size());
-				std::vector<RHI::CommandList>m_graphics_command_lists = std::vector<RHI::CommandList>(m_DependencyLevels[i].GraphicsPassCount);
+				std::vector<RHI::CommandList>m_graphics_command_lists = std::vector<RHI::CommandList>(m_DependencyLevels[i].GraphicsPassCount + 1u); //1 extra needed for resource transitions.
 				std::vector<RHI::CommandList>m_compute_command_lists = std::vector<RHI::CommandList>(m_DependencyLevels[i].ComputePassCount);
 				
 				AT::JobSystem::JobCounter* counter = nullptr;
 				uint32_t graphics_id = 0u, compute_id = 0u;
-				if (m_graphics_command_lists.size() == 0u) {
-					m_graphics_command_lists.push_back(RHI_NULL_HANDLE);
-					m_jobs.push_back([=, &m_graphics_command_lists, &m_jobs](uint32_t thread_ID) {
-						BuildComputeResourceBarrierCommandList(m_RenderThreadCommandObjects[thread_ID], m_DependencyLevels[i].StartBarriers, m_jobs, m_graphics_command_lists);
-					});
-					++graphics_id;
-				}
+				m_jobs.push_back([=, &m_graphics_command_lists, &m_jobs](uint32_t thread_ID) {
+					BuildComputeResourceBarrierCommandList(m_RenderThreadCommandObjects[thread_ID], m_DependencyLevels[i].StartBarriers, m_jobs, m_graphics_command_lists);
+				});
+				++graphics_id;
+
 				for (uint32_t j = 0u; j < m_DependencyLevels[i].RenderPassIDs.size(); ++j) {
 					if (m_RenderPasses[m_DependencyLevels[i].RenderPassIDs[j]]->GetPipelineType() == FrameGraphRenderPass::PIPELINE_TYPE::GRAPHICS) {
 						m_jobs[j] = [=, &m_jobs, &m_graphics_command_lists](uint32_t thread_ID) {
@@ -390,16 +397,17 @@ namespace AT {
 				delete counter;
 				m_Device->ExecuteCommandList(RHI::CommandType::DIRECT, m_graphics_command_lists.size(), m_graphics_command_lists.data());
 				if (m_DependencyLevels[i].SignalGraphicsValue > 0) {
-					m_Device->SignalQueue(RHI::CommandType::DIRECT, m_Fence, m_DependencyLevels[i].SignalGraphicsValue);
+					m_Device->SignalQueue(RHI::CommandType::DIRECT, m_GraphicsFence, m_DependencyLevels[i].SignalGraphicsValue);
 				}
 				if (m_compute_command_lists.size() > 0) {
 					m_Device->ExecuteCommandList(RHI::CommandType::COMPUTE, m_compute_command_lists.size(), m_compute_command_lists.data());
 					if (m_DependencyLevels[i].SignalComputeValue > 0) {
-						m_Device->SignalQueue(RHI::CommandType::COMPUTE, m_Fence, m_DependencyLevels[i].SignalComputeValue);
+						m_Device->SignalQueue(RHI::CommandType::COMPUTE, m_ComputeFence, m_DependencyLevels[i].SignalComputeValue);
 					}
 				}
 			}
 			else {
+				//Last dependency level executed seperately with the render system.
 				m_CommandList->ResourceBarrier(m_DependencyLevels[i].StartBarriers.size(), m_DependencyLevels[i].StartBarriers.data());
 				for (uint32_t j = 0u; j < m_DependencyLevels[i].RenderPassIDs.size(); ++j) {
 					uint32_t id = m_DependencyLevels[i].RenderPassIDs[j];
@@ -407,7 +415,7 @@ namespace AT {
 				}
 			}
 
-			//Single Threaded Execution Implementation.
+			//Optional Single Threaded Execution Implementation.
 			/*m_CommandList->ResourceBarrier(m_DependencyLevels[i].StartBarriers.size(), m_DependencyLevels[i].StartBarriers.data());
 			for (uint32_t j = 0u; j < m_DependencyLevels[i].RenderPassIDs.size(); ++j) {
 				uint32_t id = m_DependencyLevels[i].RenderPassIDs[j];

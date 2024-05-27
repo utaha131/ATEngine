@@ -212,8 +212,7 @@ namespace RHI::DX12 {
 		{
 			D3D12_RESOURCE_BARRIER barrier;
 			barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-			barrier.Aliasing.pResourceBefore = static_cast<DX12Buffer*>(resource_barrier.AliasingBarrierBuffer.BeforeBuffer)->GetNative();
-			barrier.Aliasing.pResourceAfter = static_cast<DX12Buffer*>(resource_barrier.AliasingBarrierBuffer.AfterBuffer)->GetNative();
+			barrier.UAV.pResource = static_cast<DX12Buffer*>(resource_barrier.UnorderedAccessBarrierBuffer.Buffer)->GetNative();
 			barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
 			return barrier;
 		}
@@ -222,8 +221,7 @@ namespace RHI::DX12 {
 		{
 			D3D12_RESOURCE_BARRIER barrier;
 			barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
-			barrier.Aliasing.pResourceBefore = static_cast<DX12Texture*>(resource_barrier.AliasingBarrierTexture.BeforeTexture)->GetNative();
-			barrier.Aliasing.pResourceAfter = static_cast<DX12Texture*>(resource_barrier.AliasingBarrierTexture.AfterTexture)->GetNative();
+			barrier.UAV.pResource = static_cast<DX12Texture*>(resource_barrier.UnorderedAccessBarrierTexture.Texture)->GetNative();
 			barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
 			return barrier;
 		}

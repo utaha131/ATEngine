@@ -1,15 +1,15 @@
 #include "Quad.hlsli"
 //Shader Parameters.
 [[vk::binding(0, 0)]] cbuffer Matrices : register(b0) {
-	float4x4 Inverse_Projection_Matrix;
-	float4x4 Projection_Matrix;
+	float4x4 InverseProjectionMatrix;
+	float4x4 ProjectionMatrix;
 	float4 Kernel[64];
 	float2 Size;
 };
 
-[[vk::binding(1, 0)]] Texture2D g_Depth : register(t0);
-[[vk::binding(2, 0)]] Texture2D g_Normal : register(t1);
-[[vk::binding(3, 0)]] Texture2D g_Noise : register(t2);
+[[vk::binding(1, 0)]] Texture2D g_DepthTexture : register(t0);
+[[vk::binding(2, 0)]] Texture2D g_NormalTexture : register(t1);
+[[vk::binding(3, 0)]] Texture2D g_NoiseTexture : register(t2);
 [[vk::binding(4, 0)]] SamplerState g_Sampler : register(s0);
 
 
@@ -28,13 +28,13 @@ PixelIn VS(uint VertexID : SV_VertexID) {
 }
 
 float4 PS(PixelIn input) : SV_Target {
-	float depth = g_Depth.Sample(g_Sampler, input.UV).r;
+	float depth = g_DepthTexture.Sample(g_Sampler, input.UV).r;
 	float2 coords = float2(input.UV.x, 1.0f - input.UV.y) * 2.0f - 1.0f;
-	float4 view_position = mul(Inverse_Projection_Matrix, float4(coords.xy, depth, 1.0f));
+	float4 view_position = mul(InverseProjectionMatrix, float4(coords.xy, depth, 1.0f));
 	view_position.xyz = view_position.xyz / view_position.w;
-	float3 normal = normalize(g_Normal.Sample(g_Sampler, input.UV).xyz * 2.0f - 1.0f);
+	float3 normal = normalize(g_NormalTexture.Sample(g_Sampler, input.UV).xyz * 2.0f - 1.0f);
 	float2 scale = float2(Size.x / 4.0f, Size.y / 4.0f);
-	float3 random_vector = normalize(g_Noise.Sample(g_Sampler, input.UV * scale).xyz * 2.0f - 1.0f);
+	float3 random_vector = normalize(g_NoiseTexture.Sample(g_Sampler, input.UV * scale).xyz * 2.0f - 1.0f);
 	float3 tangent = normalize(random_vector - normal * dot(random_vector, normal));
 	float3 bitangent = cross(normal, tangent);
 	float3x3 TBN = transpose(float3x3(tangent, bitangent, normal));
@@ -48,13 +48,13 @@ float4 PS(PixelIn input) : SV_Target {
 		sample_position = fragment_position + sample_position * radius;
 
 		float4 offset = float4(sample_position, 1.0f);
-		offset = mul(Projection_Matrix, offset);
+		offset = mul(ProjectionMatrix, offset);
 		offset.xyz /= offset.w;
 		offset.xyz = offset.xyz * 0.5f + 0.5f;
 		offset.y = 1.0f - offset.y;
-		//return offset.x;
-		float sample_depth = g_Depth.Sample(g_Sampler, offset.xy).r;
-		float4 sample_depth_position = mul(Inverse_Projection_Matrix, float4(0.0f, 0.0f, sample_depth, 1.0f));
+
+		float sample_depth = g_DepthTexture.Sample(g_Sampler, offset.xy).r;
+		float4 sample_depth_position = mul(InverseProjectionMatrix, float4(0.0f, 0.0f, sample_depth, 1.0f));
 		sample_depth = sample_depth_position.z / sample_depth_position.w;
 
 		float bias = 0.03f;

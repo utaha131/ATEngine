@@ -27,6 +27,7 @@ namespace RHI::VK {
 	}
 
 	void VKCommandList::ResourceBarrier(uint32_t resource_barrier_count, const RHI::ResourceBarrier* p_resource_barrier) {
+		std::vector<VkMemoryBarrier> vk_memory_barriers;
 		std::vector<VkImageMemoryBarrier> vk_image_memory_barriers;
 		std::vector<VkBufferMemoryBarrier> vk_buffer_memory_barriers;
 		std::vector<VkMemoryBarrier>;
@@ -94,7 +95,7 @@ namespace RHI::VK {
 				break;
 			case RHI::ResourceBarrierType::UNORDERED_ACCESS_BARRIER_BUFFER:
 			{
-				VkBufferMemoryBarrier vk_buffer_memory_barrier = {};
+				/*VkBufferMemoryBarrier vk_buffer_memory_barrier = {};
 				vk_buffer_memory_barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
 				vk_buffer_memory_barrier.pNext = VK_NULL_HANDLE;
 				vk_buffer_memory_barrier.buffer = static_cast<VKBuffer*>(p_resource_barrier[i].TransitionBarrierBuffer.Buffer)->GetNative();
@@ -104,22 +105,28 @@ namespace RHI::VK {
 				vk_buffer_memory_barrier.dstAccessMask = VKConvertBufferStateToAccessFlag(p_resource_barrier[i].TransitionBarrierBuffer.FinalState);
 				vk_buffer_memory_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 				vk_buffer_memory_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-				vk_buffer_memory_barriers.emplace_back(vk_buffer_memory_barrier);
+				vk_buffer_memory_barriers.emplace_back(vk_buffer_memory_barrier);*/
 			}
 				break;
 			case RHI::ResourceBarrierType::UNORDERED_ACCESS_BARRIER_TEXTURE:
 			{
-
+				VkMemoryBarrier vk_memory_barrier = {};
+				vk_memory_barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+				vk_memory_barrier.pNext = VK_NULL_HANDLE;
+				vk_memory_barrier.srcAccessMask = (VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT);
+				vk_memory_barriers.emplace_back(vk_memory_barrier);
+				
 			}
 				break;
 			}
 		}
-		if (vk_image_memory_barriers.size() > 0 || vk_buffer_memory_barriers.size() > 0) {
+		if (vk_memory_barriers.size() > 0 || vk_image_memory_barriers.size() > 0 || vk_buffer_memory_barriers.size() > 0) {
 			//OutputDebugString(L"Executing Barriers.\n");
 			vkCmdPipelineBarrier(m_VKCommandBuffer, 
 				VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 
 				VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 
-				0, 0, VK_NULL_HANDLE, 
+				0, 
+				vk_memory_barriers.size(), vk_memory_barriers.data(),
 				vk_buffer_memory_barriers.size(), vk_buffer_memory_barriers.data(),
 				vk_image_memory_barriers.size(), vk_image_memory_barriers.data());
 		}
