@@ -33,6 +33,9 @@ ATEngine is a cross-platform real time rendering engine. The goal of this projec
 | Parallel Command List Recording | Multithreaded Rendering. | Completed |
 | SSR | Screen-Space Reflections. | Passing. Stochastic SSR Coming. |
 | Ray-Tracing Pipline | | In Progress. |
+| Path Tracer | | In Progress. |
+| ReSTIR DI | | In Progress. |
+| ReSTIR GI | | TODO |
 | TAA | Temporal Anti-Aliasing. | TODO |
 | GTAO |  | TODO |
 | Atmospheric Scattering |  | TODO |
