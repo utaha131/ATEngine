@@ -77,6 +77,13 @@ namespace RHI {
 
 		virtual void SetGraphicsRootDescriptorTable(uint32_t root_parameter_index, const DescriptorTable table) = 0;
 		virtual void SetComputeRootDescriptorTable(uint32_t root_parameter_index, const DescriptorTable table) = 0;
+
+		//RT
+		virtual void SetRayTracingPipeline(IRayTracingPipeline* pipeline) = 0;
+		virtual void DispatchRays(const RayTracingDispatchRaysDescription& dispatch_rays_description) = 0;
+
+		virtual void BuildRaytracingBottomLevelAccelerationStructure(const BuildRayTracingBottomLevelAccelerationStructure& build_bottom_level_acceleration_structure) const = 0;
+		virtual void BuildRaytracingTopLevelAccelerationStructure(const BuildRayTracingTopLevelAccelerationStructure& build_top_level_acceleration_structure) const = 0;
 	protected:
 		ICommandList(RHI::CommandType command_type, RHI::CommandAllocator command_allocator) :
 			m_CommandType(command_type),

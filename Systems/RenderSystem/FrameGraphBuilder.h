@@ -373,8 +373,8 @@ namespace AT {
 
 		//Caches
 		std::list<FrameGraphTextureRef> m_texture_cache;
-		FrameGraphCBufferPool<256, 3000>* m_256_pool;
-		FrameGraphCBufferPool<2048, 500>* m_2048_pool;
+		FrameGraphCBufferPool<256, 1000>* m_256_pool;
+		FrameGraphCBufferPool<2048, 200>* m_2048_pool;
 		std::vector<FrameGraphRenderThreadCommandObjects*> m_RenderThreadCommandObjects;
 	};
 }

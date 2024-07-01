@@ -371,6 +371,22 @@ namespace AT {
 				(description1.NodeMask == description2.NodeMask);
 	};
 
+	auto rhi_ray_tracing_pipeline_state_description_hash_function = [](const RHI::RayTracingPipelineStateDescription& description) {
+		std::size_t hash = 0;
+		//AT::Util::Hash::hash_combine(hash, description.ExportAssociations);
+		AT::Util::Hash::hash_combine(hash, description.GlobalRootSignature);
+		description.HitGroups;
+		description.LocalRootSignatures;
+		description.MaxTraceRecursionDepth;
+		description.ShaderConfiguration;
+		description.ShaderLibraries;
+		return hash;
+	};
+
+	auto rhi_ray_tracing_pipeline_state_description_equality_function = [](const RHI::RayTracingPipelineStateDescription& description1, const RHI::RayTracingPipelineStateDescription& description2) {
+		return description1.GlobalRootSignature == description2.GlobalRootSignature;
+	};
+
 	class GPUPipelineStateManager {
 	public:
 		GPUPipelineStateManager(RHI::Device device) :
@@ -406,10 +422,20 @@ namespace AT {
 			}
 			return m_RHIComputePSOCache[description];
 		}
+
+		RHI::IRayTracingPipeline* CreateOrGetRayTracingPipelineState(const RHI::RayTracingPipelineStateDescription& description) {
+			if (m_RHIRayTracingPSOCache.find(description) == m_RHIRayTracingPSOCache.end()) {
+				RHI::IRayTracingPipeline* pipeline;
+				m_Device->CreateRayTracingPipelineState(description, pipeline);
+				m_RHIRayTracingPSOCache[description] = pipeline;
+			}
+			return m_RHIRayTracingPSOCache[description];
+		}
 	private:
 		RHI::Device m_Device;
 		std::unordered_map<RHI::GraphicsPipelineStateDescription, RHI::PipelineState, decltype(rhi_graphics_pipeline_state_description_hash_function), decltype(rhi_graphics_pipeline_state_desciption_equality_funciton)> m_RHIGraphicsPSOCache;
 		std::unordered_map<RHI::ComputePipelineStateDescription, RHI::PipelineState, decltype(rhi_compute_pipeline_state_description_hash_function), decltype(rhi_compute_pipeline_state_desciption_equality_funciton)> m_RHIComputePSOCache;
+		std::unordered_map<RHI::RayTracingPipelineStateDescription, RHI::IRayTracingPipeline*, decltype(rhi_ray_tracing_pipeline_state_description_hash_function), decltype(rhi_ray_tracing_pipeline_state_description_equality_function)> m_RHIRayTracingPSOCache;
 	};
 }
 #endif

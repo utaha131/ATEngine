@@ -1,7 +1,7 @@
 #include "DX12Device.h"
 
 namespace RHI::DX12 {
-	DX12Device::DX12Device(ID3D12Device* dx12_device) :
+	DX12Device::DX12Device(ID3D12Device5* dx12_device) :
 		m_DX12Device(dx12_device)
 	{
 		DxcCreateInstance(CLSID_DxcLibrary, IID_PPV_ARGS(&m_DXLibrary));
@@ -168,7 +168,7 @@ namespace RHI::DX12 {
 			dx12_static_sampler_descriptions[i] = DX12ConvertStaticSamplerDescription(description.StaticSamplers[i]);
 		}
 		CD3DX12_ROOT_SIGNATURE_DESC dx12_root_signature_description;
-		dx12_root_signature_description.Init(dx12_root_parameters.size(), dx12_root_parameters.data(), dx12_static_sampler_descriptions.size(), dx12_static_sampler_descriptions.data(), D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+		dx12_root_signature_description.Init(dx12_root_parameters.size(), dx12_root_parameters.data(), dx12_static_sampler_descriptions.size(), dx12_static_sampler_descriptions.data(), D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT | D3D12_ROOT_SIGNATURE_FLAG_CBV_SRV_UAV_HEAP_DIRECTLY_INDEXED);
 
 		Microsoft::WRL::ComPtr<ID3DBlob> dx12_serialized_root_signature;
 		Microsoft::WRL::ComPtr<ID3DBlob> dx12_error_blob;
@@ -191,13 +191,16 @@ namespace RHI::DX12 {
 	};
 
 	RHI::Result DX12Device::CreateShader(const RHI::ShaderDescription& description, RHI::Shader& shader) const {
-		std::wstring target = L"vs_6_0";
+		std::wstring target = L"vs_6_3";
 		switch (description.ShaderType) {
 		case RHI::ShaderType::PIXEL:
-			target = L"ps_6_0";
+			target = L"ps_6_3";
 			break;
 		case RHI::ShaderType::COMPUTE:
-			target = L"cs_6_0";
+			target = L"cs_6_3";
+			break;
+		case RHI::ShaderType::LIBRARY:
+			target = L"lib_6_6";
 			break;
 		}
 
@@ -213,9 +216,12 @@ namespace RHI::DX12 {
 			std::cout << " fialed to load file" << std::endl;
 		}
 
-		const wchar_t* arguments[] = {
-			 L"-I", L"./shaders/hlsl/",
-			 DXC_ARG_OPTIMIZATION_LEVEL3
+		const wchar_t* arguments[5] = {
+			 L"-I", 
+			 L"./shaders/hlsl/",
+			 DXC_ARG_OPTIMIZATION_LEVEL3,
+			 L"-HV",
+			 L"2021"
 		};
 
 		Microsoft::WRL::ComPtr<IDxcOperationResult> result;
@@ -224,7 +230,7 @@ namespace RHI::DX12 {
 			source_path.c_str(), // pSourceName
 			std::wstring(description.EntryPoint.begin(), description.EntryPoint.end()).c_str(),
 			target.c_str(), // pTargetProfile
-			arguments, 3,//NULL, 0, // pArguments, argCount
+			arguments, 5,//NULL, 0, // pArguments, argCount
 			NULL, 0, // pDefines, defineCount
 			m_DXIncludeHandler.Get(), // pIncludeHandler
 			&result
@@ -458,7 +464,7 @@ namespace RHI::DX12 {
 	};
 
 	RHI::Result DX12Device::CreateCommandList(RHI::CommandType command_type, RHI::CommandAllocator command_allocator, RHI::CommandList& command_list) const {
-		ID3D12GraphicsCommandList* dx12_command_list;
+		ID3D12GraphicsCommandList4* dx12_command_list;
 		D3D12_COMMAND_LIST_TYPE dx12_command_type;
 		switch (command_type) {
 		case RHI::CommandType::DIRECT:

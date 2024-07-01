@@ -22,6 +22,6 @@ namespace AT::VertexFormat {
 		sizeof(AT::VertexFormat::Vertex)
 	};
 	
-	typedef uint16_t Index;
+	typedef uint32_t Index;
 }
 #endif

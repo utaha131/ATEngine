@@ -23,11 +23,14 @@
 #include "DX12DescriptorHeap.h"
 #include "DX12Fence.h"
 
+//RT
+#include "RayTracing.h"
+
 namespace RHI::DX12 {
 	class DX12Device : public RHI::IDevice {
 		friend class DX12RenderBackend;
 	public:
-		DX12Device(ID3D12Device* dx12_device);
+		DX12Device(ID3D12Device5* dx12_device);
 		~DX12Device() override;
 		//Object Creation Interface.
 		RHI::Result CreateResourceHeap(const RHI::ResourceHeapDescription& description, RHI::ResourceHeap& resource_heap) const override;
@@ -70,8 +73,216 @@ namespace RHI::DX12 {
 		void WriteDescriptorTable(RHI::DescriptorTable descriptor_table, uint32_t offset, uint32_t count, const RHI::Sampler* p_sampler) override;
 		void WriteDescriptorTable(RHI::DescriptorTable descriptor_table, uint32_t offset, uint32_t count, const RHI::ShaderResourceView* p_srv) override;
 		void WriteDescriptorTable(RHI::DescriptorTable descriptor_table, uint32_t offset, uint32_t count, const RHI::UnorderedAccessView* p_uav) override;
-	private:
-		ID3D12Device* m_DX12Device;
+
+		//RT
+		void CreateRayTracingPipelineState(const RayTracingPipelineStateDescription& description, IRayTracingPipeline*& pipeline) const override {
+			std::vector<D3D12_STATE_SUBOBJECT> dx12_subobjects;
+
+			//Create Shader Libraries.
+			std::vector<std::vector<D3D12_EXPORT_DESC>> dx12_export_descs = std::vector<std::vector<D3D12_EXPORT_DESC>>(description.ShaderLibraries.size());
+			std::vector<std::wstring*> export_names = std::vector<std::wstring*>();
+			for (uint32_t i = 0u; i < description.ShaderLibraries.size(); ++i) {
+				dx12_export_descs[i] = std::vector<D3D12_EXPORT_DESC>(description.ShaderLibraries[i].m_ExportNames.size());
+				for (uint32_t j = 0u; j < description.ShaderLibraries[i].m_ExportNames.size(); ++j) {
+					dx12_export_descs[i][j].Name = export_names.emplace_back(new std::wstring(description.ShaderLibraries[i].m_ExportNames[j].begin(), description.ShaderLibraries[i].m_ExportNames[j].end()))->c_str();
+					dx12_export_descs[i][j].ExportToRename = dx12_export_descs[i][j].Name;
+					dx12_export_descs[i][j].Flags = D3D12_EXPORT_FLAG_NONE;
+				}
+				D3D12_DXIL_LIBRARY_DESC dx12_library_desc;
+				dx12_library_desc.DXILLibrary = static_cast<DX12Shader*>(description.ShaderLibraries[i].m_Shader)->GetByteCode();
+				dx12_library_desc.NumExports = dx12_export_descs[i].size();
+				dx12_library_desc.pExports = dx12_export_descs[i].data();
+
+				D3D12_STATE_SUBOBJECT dx12_subobject;
+				dx12_subobject.Type = D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY;
+				dx12_subobject.pDesc = &dx12_library_desc;
+				dx12_subobjects.emplace_back(dx12_subobject);
+			}
+			
+			//Create Hit Groups.
+			std::vector<D3D12_HIT_GROUP_DESC> dx12_hit_group_descs = std::vector<D3D12_HIT_GROUP_DESC>(description.HitGroups.size());
+			std::vector<std::wstring*> import_names;
+			for (uint32_t i = 0u; i < description.HitGroups.size(); ++i) {
+				dx12_hit_group_descs[i].HitGroupExport = export_names.emplace_back(new std::wstring(description.HitGroups[i].Name.begin(), description.HitGroups[i].Name.end()))->c_str();
+				switch (description.HitGroups[i].Type) {
+				case RayTracingHitGroupType::TRIANGLES:
+					dx12_hit_group_descs[i].Type = D3D12_HIT_GROUP_TYPE_TRIANGLES;
+					break;
+				case RayTracingHitGroupType::PROCEDURAL_PRIMITIVE:
+					dx12_hit_group_descs[i].Type = D3D12_HIT_GROUP_TYPE_PROCEDURAL_PRIMITIVE;
+					break;
+				}
+
+				if (description.HitGroups[i].AnyHitShaderImport != "") {
+					dx12_hit_group_descs[i].AnyHitShaderImport = import_names.emplace_back(new std::wstring(description.HitGroups[i].AnyHitShaderImport.begin(), description.HitGroups[i].AnyHitShaderImport.end()))->c_str();
+				}
+				if (description.HitGroups[i].ClosestHitShaderImport != "") {
+					dx12_hit_group_descs[i].ClosestHitShaderImport = import_names.emplace_back(new std::wstring(description.HitGroups[i].ClosestHitShaderImport.begin(), description.HitGroups[i].ClosestHitShaderImport.end()))->c_str();
+				}
+				if (description.HitGroups[i].IntersectionShaderImport != "") {
+					dx12_hit_group_descs[i].IntersectionShaderImport = import_names.emplace_back(new std::wstring(description.HitGroups[i].IntersectionShaderImport.begin(), description.HitGroups[i].IntersectionShaderImport.end()))->c_str();
+				}
+
+				D3D12_STATE_SUBOBJECT dx12_subobject;
+				dx12_subobject.Type = D3D12_STATE_SUBOBJECT_TYPE_HIT_GROUP;
+				dx12_subobject.pDesc = &dx12_hit_group_descs[i];
+				dx12_subobjects.emplace_back(dx12_subobject);
+			}
+			
+			//Create Shader Configuration.
+			uint32_t shader_config_index = dx12_subobjects.size();
+			D3D12_RAYTRACING_SHADER_CONFIG dx12_shader_config;
+			dx12_shader_config.MaxAttributeSizeInBytes = description.ShaderConfiguration.MaxAttributeSizeInBytes;
+			dx12_shader_config.MaxPayloadSizeInBytes = description.ShaderConfiguration.MaxPayloadSizeInBytes;
+			{
+				D3D12_STATE_SUBOBJECT dx12_subobject;
+				dx12_subobject.Type = D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_SHADER_CONFIG;
+				dx12_subobject.pDesc = &dx12_shader_config;
+				dx12_subobjects.emplace_back(dx12_subobject);
+			}
+
+			//Create Global Root Signature.
+			if (description.GlobalRootSignature != RHI_NULL_HANDLE) {
+				D3D12_GLOBAL_ROOT_SIGNATURE dx12_global_root_signature;
+				dx12_global_root_signature.pGlobalRootSignature = static_cast<DX12RootSignature*>(description.GlobalRootSignature)->GetNative();
+				{
+					D3D12_STATE_SUBOBJECT dx12_subobject;
+					dx12_subobject.Type = D3D12_STATE_SUBOBJECT_TYPE_GLOBAL_ROOT_SIGNATURE;
+					dx12_subobject.pDesc = &dx12_global_root_signature;
+					dx12_subobjects.emplace_back(dx12_subobject);
+				}
+			}
+
+			std::vector<D3D12_LOCAL_ROOT_SIGNATURE> dx12_local_root_signatures = std::vector<D3D12_LOCAL_ROOT_SIGNATURE>(description.LocalRootSignatures.size());
+			//Create Local Root Signatures.
+			uint32_t local_root_signature_start_index = dx12_subobjects.size();
+			for (uint32_t i = 0u; i < description.LocalRootSignatures.size(); ++i) {
+				dx12_local_root_signatures[i].pLocalRootSignature = static_cast<DX12RootSignature*>(description.LocalRootSignatures[i])->GetNative();
+				D3D12_STATE_SUBOBJECT dx12_subobject;
+				dx12_subobject.Type = D3D12_STATE_SUBOBJECT_TYPE_LOCAL_ROOT_SIGNATURE;
+				dx12_subobject.pDesc = &dx12_local_root_signatures[i];
+			}
+
+			//Create Associations.
+			std::vector<D3D12_SUBOBJECT_TO_EXPORTS_ASSOCIATION> dx12_subobject_to_exports_associations = std::vector<D3D12_SUBOBJECT_TO_EXPORTS_ASSOCIATION>(description.ExportAssociations.size());
+			std::vector<std::wstring> association_export_names = std::vector<std::wstring>();
+			std::vector<std::vector<LPCWSTR>> export_names_for_associations = std::vector<std::vector<LPCWSTR>>(description.ExportAssociations.size());
+			for (uint32_t i = 0u; i < description.ExportAssociations.size(); ++i) {
+				export_names_for_associations[i] = std::vector<LPCWSTR>(description.ExportAssociations[i].ExportNames.size());
+				for (uint32_t j = 0u; j < description.ExportAssociations[i].ExportNames.size(); ++j) {
+					export_names_for_associations[i][j] = association_export_names.emplace_back(std::wstring(description.ExportAssociations[i].ExportNames[i].begin(), description.ExportAssociations[i].ExportNames[i].end())).c_str();
+				}
+				dx12_subobject_to_exports_associations[i].NumExports = export_names_for_associations[i].size();
+				dx12_subobject_to_exports_associations[i].pExports = export_names_for_associations[i].data();
+				switch (description.ExportAssociations[i].Type) {
+				case RayTracingExportAssociationType::SHADER_PAYLOAD:
+					dx12_subobject_to_exports_associations[i].pSubobjectToAssociate = &dx12_subobjects[shader_config_index];
+					break;
+				case RayTracingExportAssociationType::LOCAL_ROOT_SIGNATURE:
+					dx12_subobject_to_exports_associations[i].pSubobjectToAssociate = &dx12_subobjects[local_root_signature_start_index + description.ExportAssociations[i].AssociationObjectIndex];
+					break;
+				}
+			}
+
+			D3D12_RAYTRACING_PIPELINE_CONFIG dx12_ray_tracing_pipeline_config;
+			dx12_ray_tracing_pipeline_config.MaxTraceRecursionDepth = description.MaxTraceRecursionDepth;
+			{
+				D3D12_STATE_SUBOBJECT dx12_subobject;
+				dx12_subobject.Type = D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_PIPELINE_CONFIG;
+				dx12_subobject.pDesc = &dx12_ray_tracing_pipeline_config;
+				dx12_subobjects.emplace_back(dx12_subobject);
+			}
+
+			D3D12_STATE_OBJECT_DESC dx12_state_object_desc;
+			dx12_state_object_desc.Type = D3D12_STATE_OBJECT_TYPE_RAYTRACING_PIPELINE;
+			dx12_state_object_desc.NumSubobjects = dx12_subobjects.size();
+			dx12_state_object_desc.pSubobjects = dx12_subobjects.data();
+			ID3D12StateObject* dx12_state_object;
+			m_DX12Device->CreateStateObject(&dx12_state_object_desc, IID_PPV_ARGS(&dx12_state_object));
+			pipeline = new DX12RayTracingPipeline(dx12_state_object);
+			for (uint32_t i = 0u; i < export_names.size(); ++i) {
+				delete export_names[i];
+			}
+		}
+
+		void CreateRayTracingBottomLevelAccelerationStructure(const RHI::Buffer buffer, IRayTracingBottomLevelAccelerationStructure*& bottom_level_acceleration_structure) const override {
+			bottom_level_acceleration_structure = new DX12RayTracingBottomLevelAccelerationStructure(buffer);
+		}
+
+		void CreateRayTracingTopLevelAccelerationStructure(const RHI::Buffer buffer, IRayTracingTopLevelAccelerationStructure*& top_level_acceleration_structure) const override {
+			D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc;
+			srvDesc.Format = DXGI_FORMAT_UNKNOWN;
+			srvDesc.ViewDimension = D3D12_SRV_DIMENSION_RAYTRACING_ACCELERATION_STRUCTURE;
+			srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+			srvDesc.RaytracingAccelerationStructure.Location = static_cast<RHI::DX12::DX12Buffer*>(buffer)->GetNative()->GetGPUVirtualAddress();
+			D3D12_CPU_DESCRIPTOR_HANDLE dx12_srv = m_ViewAllocator[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV]->AllocateHandle();
+			m_DX12Device->CreateShaderResourceView(nullptr, &srvDesc, dx12_srv);
+			top_level_acceleration_structure = new DX12RayTracingTopLevelAccelerationStructure(buffer, *m_ViewAllocator[D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV], dx12_srv);
+		}
+
+		void CreateRayTracingInstanceBuffer(RHI::Buffer buffer, uint64_t capacity, IRayTracingInstanceBuffer*& instance_buffer) const override {
+			instance_buffer = new DX12RayTracingInstanceBuffer(buffer, capacity);
+		}
+
+		void GetRayTracingBottomLevelAccelerationStructureMemoryInfo(const RayTracingBottomLevelAccelerationStructureDescription bottom_level_acceleration_structure_description, RayTracingAccelerationStructureMemoryInfo& memory_info) const override {
+			std::vector<D3D12_RAYTRACING_GEOMETRY_DESC> dx12_geometry_descriptions = std::vector<D3D12_RAYTRACING_GEOMETRY_DESC>(bottom_level_acceleration_structure_description.Geometries.size());
+
+			for (uint32_t i = 0u; i < bottom_level_acceleration_structure_description.Geometries.size(); ++i) {
+				dx12_geometry_descriptions[i].Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
+
+				dx12_geometry_descriptions[i].Triangles.VertexBuffer.StartAddress = static_cast<DX12Buffer*>(bottom_level_acceleration_structure_description.Geometries[i].VertexBuffer.Buffer)->GetNative()->GetGPUVirtualAddress();
+				dx12_geometry_descriptions[i].Triangles.VertexBuffer.StrideInBytes = bottom_level_acceleration_structure_description.Geometries[i].VertexBuffer.Stride;
+				dx12_geometry_descriptions[i].Triangles.VertexFormat = DX12ConvertFormat(bottom_level_acceleration_structure_description.Geometries[i].VertexBuffer.Format);
+				dx12_geometry_descriptions[i].Triangles.VertexCount = bottom_level_acceleration_structure_description.Geometries[i].VertexBuffer.VertexCount;
+				
+				dx12_geometry_descriptions[i].Triangles.IndexBuffer = static_cast<DX12Buffer*>(bottom_level_acceleration_structure_description.Geometries[i].IndexBuffer.Buffer)->GetNative()->GetGPUVirtualAddress();
+				dx12_geometry_descriptions[i].Triangles.IndexFormat = DX12ConvertFormat(bottom_level_acceleration_structure_description.Geometries[i].IndexBuffer.Format);
+				dx12_geometry_descriptions[i].Triangles.IndexCount = bottom_level_acceleration_structure_description.Geometries[i].IndexBuffer.IndexCount;
+
+				dx12_geometry_descriptions[i].Triangles.Transform3x4 = 0;
+
+				dx12_geometry_descriptions[i].Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
+			}
+
+			D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS dx12_ray_tracing_acceleration_structure_inputs = {};
+			dx12_ray_tracing_acceleration_structure_inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL;
+			dx12_ray_tracing_acceleration_structure_inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
+			dx12_ray_tracing_acceleration_structure_inputs.pGeometryDescs = dx12_geometry_descriptions.data();
+			dx12_ray_tracing_acceleration_structure_inputs.NumDescs = dx12_geometry_descriptions.size();
+			dx12_ray_tracing_acceleration_structure_inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
+
+			D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO dx12_prebuild_info = {};
+			m_DX12Device->GetRaytracingAccelerationStructurePrebuildInfo(&dx12_ray_tracing_acceleration_structure_inputs, &dx12_prebuild_info);
+			memory_info.ScratchDataSize = dx12_prebuild_info.ScratchDataSizeInBytes;
+			memory_info.DestinationDataSize = dx12_prebuild_info.ResultDataMaxSizeInBytes;
+		}
+
+		void GetRayTracingTopLevelAccelerationStructureMemoryInfo(const RayTracingTopLevelAccelerationStructureDescription top_level_acceleration_structure_description, RayTracingAccelerationStructureMemoryInfo& memory_info) const override {
+			D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_INPUTS dx12_ray_tracing_acceleration_structure_inputs = {};
+			dx12_ray_tracing_acceleration_structure_inputs.Type = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL;
+			dx12_ray_tracing_acceleration_structure_inputs.DescsLayout = D3D12_ELEMENTS_LAYOUT_ARRAY;
+			dx12_ray_tracing_acceleration_structure_inputs.InstanceDescs = static_cast<RHI::DX12::DX12Buffer*>(top_level_acceleration_structure_description.InstancesBuffer->GetBuffer())->GetNative()->GetGPUVirtualAddress();
+			dx12_ray_tracing_acceleration_structure_inputs.NumDescs = top_level_acceleration_structure_description.InstanceCount;
+			dx12_ray_tracing_acceleration_structure_inputs.Flags = D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE;
+
+			D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO dx12_prebuild_info = {};
+			m_DX12Device->GetRaytracingAccelerationStructurePrebuildInfo(&dx12_ray_tracing_acceleration_structure_inputs, &dx12_prebuild_info);
+			memory_info.ScratchDataSize = dx12_prebuild_info.ScratchDataSizeInBytes;
+			memory_info.DestinationDataSize = dx12_prebuild_info.ResultDataMaxSizeInBytes;
+		}
+
+		void WriteDescriptorTable(RHI::DescriptorTable descriptor_table, uint32_t offset, uint32_t count, IRayTracingTopLevelAccelerationStructure** p_top_level_acceleration_structures) override {
+			CD3DX12_CPU_DESCRIPTOR_HANDLE dx12_destination_cpu_handle{ static_cast<DX12DescriptorTable*>(descriptor_table)->GetCPUHandle() };
+			dx12_destination_cpu_handle.Offset(offset, m_DX12Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+			for (uint32_t i = 0u; i < count; ++i) {
+				m_DX12Device->CopyDescriptorsSimple(1u, dx12_destination_cpu_handle, static_cast<const DX12RayTracingTopLevelAccelerationStructure*>(p_top_level_acceleration_structures[i])->GetNative(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+				dx12_destination_cpu_handle.Offset(1, m_DX12Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
+			}
+		}
+
+		ID3D12Device5* m_DX12Device;
+	//private:
+		
 		ID3D12CommandQueue* m_DX12CommandQueues[(uint32_t)RHI::CommandType::NUM_TYPES];
 
 		DX12DescriptorHeap* m_GPUDescriptorHeap;

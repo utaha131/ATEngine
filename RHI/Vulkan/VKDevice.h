@@ -157,6 +157,36 @@ namespace RHI::VK {
 		void WriteDescriptorTable(RHI::DescriptorTable descriptor_table, uint32_t offset, uint32_t count, const RHI::ShaderResourceView* p_srv) override;
 		void WriteDescriptorTable(RHI::DescriptorTable descriptor_table, uint32_t offset, uint32_t count, const RHI::UnorderedAccessView* p_uav) override;
 
+		//RT
+		void CreateRayTracingPipelineState(const RHI::RayTracingPipelineStateDescription& description, RHI::IRayTracingPipeline*& pipeline) const override {
+			VkRayTracingPipelineCreateInfoKHR vk_ray_tracing_pipeline_create_info = {};
+			vk_ray_tracing_pipeline_create_info.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
+			vk_ray_tracing_pipeline_create_info.pNext = VK_NULL_HANDLE;
+			vk_ray_tracing_pipeline_create_info;
+			vk_ray_tracing_pipeline_create_info.maxPipelineRayRecursionDepth = description.MaxTraceRecursionDepth;
+		}
+
+		void CreateRayTracingBottomLevelAccelerationStructure(const RHI::Buffer buffer, IRayTracingBottomLevelAccelerationStructure*& bottom_level_acceleration_structure) const override {
+
+		}
+
+		void CreateRayTracingTopLevelAccelerationStructure(const RHI::Buffer buffer, IRayTracingTopLevelAccelerationStructure*& top_level_acceleration_structure) const override {
+
+		}
+
+		void CreateRayTracingInstanceBuffer(RHI::Buffer buffer, uint64_t capacity, IRayTracingInstanceBuffer*& instance_buffer) const override {
+
+		}
+
+		void GetRayTracingBottomLevelAccelerationStructureMemoryInfo(const RayTracingBottomLevelAccelerationStructureDescription bottom_level_acceleration_structure_description, RayTracingAccelerationStructureMemoryInfo& memory_info) const override {
+		}
+
+		void GetRayTracingTopLevelAccelerationStructureMemoryInfo(const RayTracingTopLevelAccelerationStructureDescription top_level_acceleration_structure_description, RayTracingAccelerationStructureMemoryInfo& memory_info) const override {
+		}
+		
+		void WriteDescriptorTable(RHI::DescriptorTable descriptor_table, uint32_t offset, uint32_t count, IRayTracingTopLevelAccelerationStructure** p_top_level_acceleration_structures) override {
+		}
+
 		VKCommandQueue* GetQueue(RHI::CommandType command_type) {
 			return m_VKCommandQueues[(uint32_t)command_type];
 		}

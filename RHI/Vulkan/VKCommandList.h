@@ -47,6 +47,23 @@ namespace RHI::VK {
 		void BeginRenderPass(const RHI::BeginRenderPassInfo& begin_render_pass_info) override;
 		void EndRenderPass() override;
 
+		//RT
+		void SetRayTracingPipeline(IRayTracingPipeline* pipeline) override {
+
+		}
+
+		void DispatchRays(const RayTracingDispatchRaysDescription& dispatch_rays_description) override {
+
+		}
+
+		void BuildRaytracingBottomLevelAccelerationStructure(const BuildRayTracingBottomLevelAccelerationStructure& build_bottom_level_acceleration_structure) const override {
+
+		}
+
+		void BuildRaytracingTopLevelAccelerationStructure(const BuildRayTracingTopLevelAccelerationStructure& build_top_level_acceleration_structure) const override {
+
+		}
+
 		inline VkCommandBuffer GetNative() { return m_VKCommandBuffer; }
 	private:
 		VkCommandBuffer m_VKCommandBuffer;

@@ -189,7 +189,7 @@ namespace AT {
 			m_TextureCache[path] = texture;
 			return texture;
 		}
-	private:
+	public:
 		RHI::Device m_Device;
 		GPUResourceManager& m_ResourceManager;
 		std::unordered_map<std::string, Material*> m_MaterialCache;

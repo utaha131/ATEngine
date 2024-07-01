@@ -69,6 +69,7 @@ namespace AT {
 			render_data.ViewProjectionMatrix = render_data.ViewMatrix * render_data.ProjectionMatrix;
 			render_data.InverseProjectionMatrix = DirectX::XMMatrixInverse(nullptr, render_data.ProjectionMatrix);
 			render_data.InverseViewMatrix = DirectX::XMMatrixInverse(nullptr, render_data.ViewMatrix);
+			render_data.InverseViewProjectionMatrix = DirectX::XMMatrixInverse(nullptr, render_data.ViewProjectionMatrix);
 
 			//Parse Scene Graph.
 				DirectX::XMMATRIX model = DirectX::XMMatrixSet(1.0f, 0.0f, 0.0f, 0.0f,
@@ -94,12 +95,14 @@ namespace AT {
 				render_objects.emplace_back(render_object);
 			}
 		}
-	private:
+	//private:
+	public:
 		SceneNode* m_SceneRoot;
 		std::vector<Mesh*> m_Meshes;
 		std::vector<Material*> m_Materials;
 		std::unordered_map<std::string, GPUTexturePtr> m_TextureCache;
 		//Light Data.
+	public:
 		std::vector<Light> m_Lights;
 		std::vector<ReflectionProbe> m_Probes;
 	};

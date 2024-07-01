@@ -11,6 +11,7 @@ namespace RHI {
 		GEOMETRY,
 		PIXEL,
 		COMPUTE,
+		LIBRARY,
 	};
 
 	typedef struct ShaderDescription {

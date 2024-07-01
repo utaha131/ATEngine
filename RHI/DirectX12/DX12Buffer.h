@@ -50,6 +50,11 @@ namespace RHI::DX12 {
 
 		case BufferState::PIXEL_SHADER_RESOURCE:
 			return D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+
+
+
+		case BufferState::RAYTRACING_ACCELERATION_STRUCTURE:
+			return D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
 		}
 	}
 	inline D3D12_RESOURCE_DESC DX12ConvertBufferDescription(const BufferDescription& description) {

@@ -37,6 +37,7 @@ namespace AT {
 	class Mesh;
 	class Material;
 	struct RenderData {
+		uint64_t FrameNumber;
 		float FOV;
 		DirectX::XMVECTOR CameraPosition;
 		DirectX::XMMATRIX ProjectionMatrix;
@@ -44,6 +45,7 @@ namespace AT {
 		DirectX::XMMATRIX ViewProjectionMatrix;
 		DirectX::XMMATRIX InverseProjectionMatrix;
 		DirectX::XMMATRIX InverseViewMatrix;
+		DirectX::XMMATRIX InverseViewProjectionMatrix;
 		std::optional<ReflectionProbe> ReflectionProbe;
 		std::optional<LightProbe> LightProbe;
 		std::vector<RenderObject> RenderObjects;

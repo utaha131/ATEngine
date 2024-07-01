@@ -99,8 +99,8 @@ namespace AT {
 		m_GraphicsCurrentFenceValue(0ull),
 		m_ComputeCurrentFenceValue(0ull)
 	{
-		m_256_pool = new FrameGraphCBufferPool<256, 3000>(m_RHIResourceAllocator, m_Device);
-		m_2048_pool = new FrameGraphCBufferPool<2048, 500>(m_RHIResourceAllocator, m_Device);
+		m_256_pool = new FrameGraphCBufferPool<256, 1000>(m_RHIResourceAllocator, m_Device);
+		m_2048_pool = new FrameGraphCBufferPool<2048, 200>(m_RHIResourceAllocator, m_Device);
 		for (uint32_t i = 0u; i < JobSystem::Threads(); ++i) {
 			FrameGraphRenderThreadCommandObjects* command_objects = new FrameGraphRenderThreadCommandObjects{};
 			m_Device->CreateCommandAllocator(RHI::CommandType::DIRECT, command_objects->GraphicsCommandAllocator);

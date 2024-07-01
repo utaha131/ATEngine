@@ -6,6 +6,7 @@
 #include <vector>
 #include <string>
 #include <optional>
+#include <exception>
 
 namespace RHI {
 	typedef class IAdapter* Adapter;
@@ -500,6 +501,7 @@ namespace RHI {
 
 		NON_PIXEL_SHADER_RESOURCE,
 		PIXEL_SHADER_RESOURCE,
+		RAYTRACING_ACCELERATION_STRUCTURE,
 	};
 
 	enum class TextureType : uint8_t {
@@ -680,5 +682,264 @@ namespace RHI {
 	}
 
 	typedef IRenderPass* RenderPass;
+
+
+	inline void Throw(Result result) {
+		if (result != Result::SUCCESS) {
+			throw std::exception{};
+		}
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	//Ray Tracing Experimental
+	class IRayTracingPipeline {
+	public:
+		virtual void* GetShaderIdentifier(const std::string& name) const = 0;
+	};
+	/*
+	D3D12_RAYTRACING_GEOMETRY_DESC geometry_description;
+	geometry_description.Type = D3D12_RAYTRACING_GEOMETRY_TYPE_TRIANGLES;
+	geometry_description.Triangles.VertexBuffer.StartAddress = static_cast<RHI::DX12::DX12Buffer*>(vertex_buffer->GetRHIHandle())->GetNative()->GetGPUVirtualAddress();
+	geometry_description.Triangles.VertexBuffer.StrideInBytes = sizeof(Vertex);
+	geometry_description.Triangles.VertexCount = 3;
+	geometry_description.Triangles.VertexFormat = DXGI_FORMAT_R32G32B32_FLOAT;
+	geometry_description.Triangles.IndexBuffer = static_cast<RHI::DX12::DX12Buffer*>(index_buffer->GetRHIHandle())->GetNative()->GetGPUVirtualAddress();
+	geometry_description.Triangles.IndexCount = 3;
+	geometry_description.Triangles.IndexFormat = DXGI_FORMAT_R16_UINT;
+	geometry_description.Triangles.Transform3x4 = 0;
+	geometry_description.Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
+	*/
+	
+	enum class RayTracingGeometryType {
+		TRIANGLES,
+		AABBS
+	};
+
+	enum class RayTracingGeometryFlag {
+		NONE ,
+#undef OPAQUE
+		OPAQUE,
+		NO_DUPLICATE_ANYHIT_INVOCATION 
+	};
+
+	struct RayTracingGeometryDescription {
+		struct VertexBufferDescription {
+			RHI::Buffer Buffer;
+			RHI::Format Format;
+			uint32_t Stride;
+			uint64_t VertexCount;
+		} VertexBuffer;
+
+		struct IndexBufferDescription {
+			RHI::Buffer Buffer;
+			RHI::Format Format;
+			uint32_t IndexCount;
+		} IndexBuffer;
+	};
+
+	struct RayTracingAccelerationStructureMemoryInfo {
+		uint64_t ScratchDataSize;
+		uint64_t DestinationDataSize;
+	};
+
+	//Bottom Level Acceleration Structure.
+	struct RayTracingBottomLevelAccelerationStructureDescription {
+		std::vector<RayTracingGeometryDescription> Geometries;
+	};
+
+	class IRayTracingBottomLevelAccelerationStructure {
+	public:
+		IRayTracingBottomLevelAccelerationStructure(RHI::Buffer buffer) :
+			m_Buffer(buffer)
+		{
+
+		}
+
+		virtual ~IRayTracingBottomLevelAccelerationStructure() = default;
+		RHI::Buffer GetBuffer() const {
+			return m_Buffer;
+		}
+	protected:
+		RHI::Buffer m_Buffer;
+	};
+
+	struct BuildRayTracingBottomLevelAccelerationStructure {
+		RayTracingBottomLevelAccelerationStructureDescription* description;
+		IRayTracingBottomLevelAccelerationStructure* ScratchBottomLevelAccelerationStructure;
+		IRayTracingBottomLevelAccelerationStructure* DestinationBottomLevelAccelerationStructure;
+	};
+
+	//Top Level Acceleration Structure.
+	/*
+	D3D12_RAYTRACING_INSTANCE_DESC instance_desc = {};
+	instance_desc.InstanceID = 0;
+	instance_desc.InstanceContributionToHitGroupIndex = 0;
+	instance_desc.InstanceMask = 0xFF;
+	instance_desc.Transform[0][0] = instance_desc.Transform[1][1] = instance_desc.Transform[2][2] = 1;
+	instance_desc.Flags = D3D12_RAYTRACING_INSTANCE_FLAG_NONE;
+	instance_desc.AccelerationStructure = static_cast<RHI::DX12::DX12Buffer*>(blas)->GetNative()->GetGPUVirtualAddress();
+	RHI::BufferDescription buffer_description;
+	buffer_description.Size = sizeof(instance_desc);
+	buffer_description.UsageFlags = RHI::BufferUsageFlag::NONE;
+	AT::GPUBufferPtr instance_desc_buffer = resource_manager.CreateUploadBuffer(buffer_description);
+	instance_desc_buffer->GetRHIHandle()->Map();
+	instance_desc_buffer->GetRHIHandle()->CopyData(0, &instance_desc, sizeof(instance_desc));
+	*/
+
+	struct RayTracingInstance {
+		float Transform[3][4];
+		uint32_t InstanceID;
+		uint32_t InstanceMask;
+		uint32_t InstanceContributionToHitGroupIndex;
+		uint32_t Flags;
+		IRayTracingBottomLevelAccelerationStructure* BottomLevelAccelerationStructure;
+	};
+
+	class IRayTracingInstanceBuffer {
+	public:
+		IRayTracingInstanceBuffer(RHI::Buffer buffer, uint64_t capacity) :
+			m_Buffer(buffer),
+			m_Capacity(capacity)
+		{
+			
+		}
+
+		RHI::Buffer GetBuffer() const {
+			return m_Buffer;
+		}
+
+		virtual void WriteInstance(uint64_t offset, RayTracingInstance& instance) = 0;
+		virtual void WriteInstances(uint64_t offset, std::vector<RayTracingInstance>& instances) = 0;
+	protected:
+		RHI::Buffer m_Buffer;
+		uint64_t m_Capacity;
+	};
+
+	struct RayTracingTopLevelAccelerationStructureDescription {
+		IRayTracingInstanceBuffer* InstancesBuffer;
+		uint64_t InstanceCount;
+	};
+
+	class IRayTracingTopLevelAccelerationStructure {
+	public:
+		IRayTracingTopLevelAccelerationStructure(RHI::Buffer buffer) :
+			m_Buffer(buffer)
+		{
+
+		}
+
+		virtual ~IRayTracingTopLevelAccelerationStructure() = default;
+		RHI::Buffer GetBuffer() const {
+			return m_Buffer;
+		}
+	protected:
+		RHI::Buffer m_Buffer;
+	};
+
+	struct BuildRayTracingTopLevelAccelerationStructure {
+		RayTracingTopLevelAccelerationStructureDescription* description;
+		IRayTracingTopLevelAccelerationStructure* ScratchTopLevelAccelerationStructure;
+		IRayTracingTopLevelAccelerationStructure* DestinationTopLevelAccelerationStructure;
+	};
+
+
+	typedef struct RayTracingShaderConfiguration {
+		uint32_t MaxPayloadSizeInBytes;
+		uint32_t MaxAttributeSizeInBytes;
+	};
+
+	class RayTracingShaderLibrary {
+	public:
+		void SetLibrary(RHI::Shader shader) {
+			m_Shader = shader;
+		}
+
+		void DefineExport(const std::string& export_name) {
+			m_ExportNames.emplace_back(export_name);
+		}
+		Shader m_Shader;
+		std::vector<std::string> m_ExportNames;
+	};
+
+	enum class RayTracingHitGroupType {
+		TRIANGLES,
+		PROCEDURAL_PRIMITIVE
+	};
+
+	typedef struct RayTracingHitGroup {
+		std::string Name;
+		RayTracingHitGroupType Type;
+		std::string AnyHitShaderImport;
+		std::string ClosestHitShaderImport;
+		std::string IntersectionShaderImport;
+	} HitGroup;
+
+	enum class RayTracingExportAssociationType {
+		SHADER_PAYLOAD,
+		LOCAL_ROOT_SIGNATURE
+	};
+	typedef struct RayTracingExportAssociation {
+		std::vector<std::string> ExportNames;
+		RayTracingExportAssociationType Type;
+		uint32_t AssociationObjectIndex;
+	};
+
+	typedef struct RayTracingPipelineStateDescription {
+		std::vector<RayTracingShaderLibrary> ShaderLibraries;
+		std::vector<RayTracingHitGroup> HitGroups;
+		RayTracingShaderConfiguration ShaderConfiguration;
+		RootSignature GlobalRootSignature;
+		std::vector<RootSignature> LocalRootSignatures;
+		std::vector<RayTracingExportAssociation> ExportAssociations;
+		uint32_t MaxTraceRecursionDepth;
+	} RayTracingPipelineStateDescription;
+
+
+	struct GPUBufferRange {
+		RHI::Buffer Buffer;
+		uint64_t Offset;
+		uint64_t Size;
+	};
+
+	struct GPUBufferRangeAndStride {
+		RHI::Buffer Buffer;
+		uint64_t Offset;
+		uint64_t Size;
+		uint64_t Stride;
+	};
+
+	struct RayTracingDispatchRaysDescription {
+		uint32_t Width;
+		uint32_t Height;
+		uint32_t Depth;
+		GPUBufferRange RayGenerationShaderRecord;
+		GPUBufferRangeAndStride MissShaderTable;
+		GPUBufferRangeAndStride HitGroupTable;
+	};
 }
 #endif

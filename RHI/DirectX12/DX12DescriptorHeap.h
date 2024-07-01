@@ -33,6 +33,7 @@ namespace RHI::DX12 {
 		D3D12_CPU_DESCRIPTOR_HANDLE m_CPUHandle;
 		D3D12_GPU_DESCRIPTOR_HANDLE m_GPUHandle;
 		DX12DescriptorHeap& m_DescriptorHeap;
+	public:
 		AllocationInfo m_AllocationInfo;
 		friend DX12DescriptorHeap;
 	};

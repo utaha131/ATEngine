@@ -1,7 +1,7 @@
 #include "DX12CommandList.h"
 
 namespace RHI::DX12 {
-	DX12CommandList::DX12CommandList(RHI::CommandType command_type, RHI::CommandAllocator command_allocator, ID3D12GraphicsCommandList* dx12_command_list, std::array<ID3D12DescriptorHeap*, 2> dx12_descriptor_heaps) :
+	DX12CommandList::DX12CommandList(RHI::CommandType command_type, RHI::CommandAllocator command_allocator, ID3D12GraphicsCommandList4* dx12_command_list, std::array<ID3D12DescriptorHeap*, 2> dx12_descriptor_heaps) :
 		RHI::ICommandList(command_type, command_allocator),
 		m_DX12CommandList(dx12_command_list)
 	{

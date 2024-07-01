@@ -28,7 +28,11 @@ float3 ACESFilm(float3 x)
 
 float4 PS(PixelIn input) : SV_Target {
 	float3 color =  g_InputTexture.Sample(g_Sampler, input.UV.xy).rgb;
+	float lum = dot(color, float3(0.299, 0.587, 0.114));
+	float r = lum / (lum + 1.0f);
+	float3 ldr = color * (r / lum);
 	//float3 ldr = color.rgb / (color.rgb + float3(1.0f, 1.0f, 1.0f));
-	float3 ldr = ACESFilm(color.rgb);
-	return float4(ldr.rgb, 1.0f);
+	//float3 ldr = ACESFilm(color.rgb);
+	float gamma = 2.2f;
+	return float4(pow(ldr.rgb, 1.0f / gamma), 1.0f);
 }

@@ -529,9 +529,6 @@
     <ClInclude Include="RHI\Vulkan\VKDescriptorHeap.h">
       <Filter>RHI\Vulkan\DescriptorHeap</Filter>
     </ClInclude>
-    <ClInclude Include="RHI\Vulkan\VKDevice.h">
-      <Filter>RHI\Vulkan\Device</Filter>
-    </ClInclude>
     <ClInclude Include="RHI\Vulkan\VKFrameBuffer.h">
       <Filter>RHI\Vulkan\FrameBuffer</Filter>
     </ClInclude>
@@ -687,6 +684,15 @@
     </ClInclude>
     <ClInclude Include="Systems\RenderSystem\RenderFeatures.h">
       <Filter>Systems\RenderSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\RenderSystem\Renderers\PathTracer.h">
+      <Filter>Systems\RenderSystem\Renderers</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\DirectX12\RayTracing.h">
+      <Filter>RHI\DirectX12</Filter>
+    </ClInclude>
+    <ClInclude Include="RHI\Vulkan\VKDevice.h">
+      <Filter>RHI\Vulkan\Fence</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

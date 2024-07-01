@@ -12,6 +12,13 @@ namespace RHI::VK {
 		void Map() override;
 		void CopyData(uint64_t offset, const void* data, uint64_t size) override;
 		void Unmap() override;
+		VkDeviceAddress GetVkDeviceAddress() const {
+			VkBufferDeviceAddressInfo vk_buffer_device_address_info;
+			vk_buffer_device_address_info.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+			vk_buffer_device_address_info.pNext = VK_NULL_HANDLE;
+			vk_buffer_device_address_info.buffer = m_VKBuffer;
+			return vkGetBufferDeviceAddress(m_VKDevice, &vk_buffer_device_address_info);
+		}
 		inline VkBuffer GetNative() const { return m_VKBuffer; }
 	private:
 		VkBuffer m_VKBuffer;

@@ -76,7 +76,7 @@ namespace AT {
 					mesh->VBView.Stride = sizeof(AT::VertexFormat::Vertex);
 
 					mesh->IBView.Buffer = mesh->IndexBuffer->GetRHIHandle();
-					mesh->IBView.Format = RHI::Format::R16_UINT;
+					mesh->IBView.Format = RHI::Format::R32_UINT;
 					mesh->IBView.Size = index_buffer_description.Size;
 
 					m_StagingResources.push_back(staging_vertex_buffer);

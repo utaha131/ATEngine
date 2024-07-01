@@ -46,7 +46,7 @@ namespace RHI::DX12 {
 	}
 
 	RHI::Result DX12RenderBackend::CreateDevice(const RHI::Adapter adapter, RHI::Device& device) {
-		ID3D12Device* dx12_device;
+		ID3D12Device5* dx12_device;
 		if (FAILED(D3D12CreateDevice(static_cast<const DX12Adapter*>(adapter)->GetNative(), D3D_FEATURE_LEVEL_12_0, IID_PPV_ARGS(&dx12_device)))) {
 			return RHI::Result::E_CREATE_DEVICE;
 		}

@@ -18,6 +18,7 @@ namespace RHI::DX12 {
 		ID3D12PipelineState* GetNative() const { return m_DX12PipelineState; };
 	private:
 		ID3D12PipelineState* m_DX12PipelineState;
+		ID3D12StateObject* m_DX12State;
 	};
 
 	inline D3D12_GRAPHICS_PIPELINE_STATE_DESC DX12ConvertGraphicsPipelineStateDescription(const RHI::GraphicsPipelineStateDescription& description) {

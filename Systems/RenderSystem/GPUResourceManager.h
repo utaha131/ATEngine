@@ -7,7 +7,7 @@
 #include "GPUShaderManager.h"
 #include <mutex>
 #include <algorithm>
-#define _1_GB_ 536870912
+#define _1_GB_ 536870912 * 2
 
 namespace AT {
 
@@ -94,6 +94,12 @@ namespace AT {
 	private:
 		friend class GPUResourceManager;
 		std::vector<GPUTexturePtr> m_source_textures;
+	};
+
+	class GPURayTracingAccelerationStructureBuildBatch {
+		void AddBuild() {
+
+		}
 	};
 
 	//GPU Resource Manager.
@@ -193,23 +199,23 @@ namespace AT {
 			}
 		}
 
-		GPUBufferPtr CreateBuffer(const RHI::BufferDescription& description) {
+		GPUBufferPtr CreateBuffer(const RHI::BufferDescription& description, RHI::BufferState buffer_state = RHI::BufferState::COMMON) {
 			RHI::AllocationInfo allocation_info = m_Device->GetResourceAllocationInfo(description);
 			GPUMemoryAllocator::FreeListAllocator::Allocation allocation = m_DefaultAllocator.Allocate(allocation_info.Size, allocation_info.Alignment);
 			GPUBufferPtr buffer = new GPUBuffer{};
 			buffer->m_MemoryType = GPUBuffer::MEMORY_TYPE::DEVICE;
 			buffer->m_Allocation = allocation;
-			m_Device->CreateBuffer(m_DefaultAllocator.GetResourceHeap(), allocation.offset + allocation.padding, RHI::BufferState::COMMON, description, buffer->m_RHI);
+			m_Device->CreateBuffer(m_DefaultAllocator.GetResourceHeap(), allocation.offset + allocation.padding, buffer_state, description, buffer->m_RHI);
 			return m_Buffers.emplace_back(buffer);
 		}
 
-		GPUBufferPtr CreateUploadBuffer(const RHI::BufferDescription& description) {
+		GPUBufferPtr CreateUploadBuffer(const RHI::BufferDescription& description, RHI::BufferState buffer_state = RHI::BufferState::COMMON) {
 			RHI::AllocationInfo allocation_info = m_Device->GetResourceAllocationInfo(description);
 			GPUMemoryAllocator::FreeListAllocator::Allocation allocation = m_UploadAllocator.Allocate(allocation_info.Size, allocation_info.Alignment);
 			GPUBufferPtr buffer = new GPUBuffer{};
 			buffer->m_MemoryType = GPUBuffer::MEMORY_TYPE::HOST;
 			buffer->m_Allocation = allocation;
-			m_Device->CreateBuffer(m_UploadAllocator.GetResourceHeap(), allocation.offset + allocation.padding, RHI::BufferState::COMMON, description, buffer->m_RHI);
+			m_Device->CreateBuffer(m_UploadAllocator.GetResourceHeap(), allocation.offset + allocation.padding, buffer_state, description, buffer->m_RHI);
 			return m_Buffers.emplace_back(buffer);
 		}
 

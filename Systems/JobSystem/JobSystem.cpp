@@ -20,7 +20,7 @@ namespace AT::JobSystem {
         finishedLabel.store(0);
 
         auto numCores = std::thread::hardware_concurrency();
-        numThreads = 16;//(std::max)(1u, numCores);
+        numThreads = 16u;//(std::max)(1u, numCores);
 
         for (uint32_t threadID = 0; threadID < numThreads; ++threadID) {
             std::thread worker([=] {
