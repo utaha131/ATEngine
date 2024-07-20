@@ -42,6 +42,8 @@ ATEngine is a cross-platform real time rendering engine. The goal of this projec
 | Scene Loading | Editing, Saving and Loading Custom Scenes | TODO |
 
 # ScreenShots
+## ReSTIR DI & GI
+![ReSTIR DI & GI Demo](https://raw.githubusercontent.com/utaha131/ATEngine/main/Screenshots/ReSTIR.jpg)
 ## DirectX 12 & Vulkan Support
 ![DirectX 12 & Vulkan Support](https://raw.githubusercontent.com/utaha131/ATEngine/main/Screenshots/DX12VK.jpg)
 ## Cascaded Shadow Mapping
