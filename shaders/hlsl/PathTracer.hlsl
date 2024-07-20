@@ -14,7 +14,7 @@ Texture2D<float4> g_Depth : register(t4, space0);
 RWTexture2D<float4> gOutput : register(u0, space0);
 SamplerState g_Sampler : register(s0, space0);
 
-#define SKY_COLOR float3(0.529f, 0.808f, 0.922f) * 1.0f
+#define SKY_COLOR float3(0.529f, 0.808f, 0.922f) * 0.0f
 
 struct InstanceInfo {
   uint32_t VertexBufferIndex;
@@ -98,87 +98,87 @@ template <typename BxDF> float3 IndirectIllumination(inout RNGSampler rng, in Su
 
 [shader("raygeneration")]
 void RayGen() {
-  // uint3 index = DispatchRaysIndex();
-  // float2 dims = float2(DispatchRaysDimensions().xy);
-  // float2 d = (((index.xy + 0.5f) / dims.xy) * 2.0f - 1.0f);
-  // float4 base_color = g_BaseColor.Load(index.xyz).rgba;
+  uint3 index = DispatchRaysIndex();
+  float2 dims = float2(DispatchRaysDimensions().xy);
+  float2 d = (((index.xy + 0.5f) / dims.xy) * 2.0f - 1.0f);
+  float4 base_color = g_BaseColor.Load(index.xyz).rgba;
 
-  // if (base_color.x == 0.0f && base_color.y == 0.0f && base_color.z == 0.0f && base_color.w == 0.0f) {
-  //   gOutput[index.xy] = float4(SKY_COLOR, 1.0f) * 10.0f;
-  //   return;
-  // }
-
-  // float3 normal = normalize(g_Normals.Load(index.xyz).xyz * 2.0f - 1.0f);
-  // float3 surface = g_Surface.Load(index.xyz).rgb;
-  // float depth = g_Depth.Load(index.xyz).r;
-  // float4 world_space_position = mul(InverseViewProjectionMatrix, float4(d.x, -d.y, depth, 1.0f));
-  // world_space_position.xyz /= world_space_position.w;
-  // float3 wo = normalize(CameraPosition.xyz - world_space_position.xyz);
-
-  // RNGSampler rng = InitRNGSampler(DispatchRaysIndex().xy, FrameNumber);
-
-  // SurfaceInteraction<UE4BRDF> surface_interaction;
-  // surface_interaction.Position = world_space_position.xyz;
-  // surface_interaction.Normal = normal;
-  // surface_interaction.wo = wo;
-  // surface_interaction.brdf.BaseColor = base_color.rgba;
-  
-  // surface_interaction.brdf.Roughness = surface.g;
-  // surface_interaction.brdf.Metalness = surface.b;
-
-  // uint i = (LIGHT_COUNT - 1) * rng.SampleUniform();
-  // LightSample light_sample = GetLightSample(surface_interaction.Position, Lights[i]);
-  // light_sample.pdf /= LIGHT_COUNT;
-
-  // float3 DI = SampleDirectLighting(light_sample, surface_interaction);
-  // float3 GI = IndirectIllumination(rng, surface_interaction);
-
-  // gOutput[index.xy] = float4(DI + GI, 1.0f);
-  
-  
-  if (FrameNumber < 2) {
-    uint3 index = DispatchRaysIndex();
-    gOutput[index.xy] = float4(0.0f, 0.0f, 0.0f, 1.0f);
+  if (base_color.x == 0.0f && base_color.y == 0.0f && base_color.z == 0.0f && base_color.w == 0.0f) {
+    gOutput[index.xy] = float4(SKY_COLOR, 1.0f) * 10.0f;
+    return;
   }
-#define SAMPLE_COUNT 512
-  if (FrameNumber < SAMPLE_COUNT * 2) {
-    uint3 index = DispatchRaysIndex();
-    float2 dims = float2(DispatchRaysDimensions().xy);
-    float2 d = (((index.xy + 0.5f) / dims.xy) * 2.0f - 1.0f);
-    float4 base_color = g_BaseColor.Load(index.xyz).rgba;
-    
-    if (base_color.x == 0.0f && base_color.y == 0.0f && base_color.z == 0.0f && base_color.w == 0.0f) {
-      gOutput[index.xy] = float4(SKY_COLOR, 1.0f) * 10.0f;
-      return;
-    }
-    
-    float3 normal = normalize(g_Normals.Load(index.xyz).xyz * 2.0f - 1.0f);
-    float3 surface = g_Surface.Load(index.xyz).rgb;
-    float depth = g_Depth.Load(index.xyz).r;
-    float4 world_space_position = mul(InverseViewProjectionMatrix, float4(d.x, -d.y, depth, 1.0f));
-    world_space_position.xyz /= world_space_position.w;
-    float3 wo = normalize(CameraPosition.xyz - world_space_position.xyz);
-    
-    RNGSampler rng = InitRNGSampler(DispatchRaysIndex().xy, FrameNumber);
 
-    SurfaceInteraction<UE4BRDF> surface_interaction;
-    surface_interaction.Position = world_space_position.xyz;
-    surface_interaction.Normal = normal;
-    surface_interaction.wo = wo;
-    surface_interaction.brdf.BaseColor = base_color.rgba;
+  float3 normal = normalize(g_Normals.Load(index.xyz).xyz * 2.0f - 1.0f);
+  float3 surface = g_Surface.Load(index.xyz).rgb;
+  float depth = g_Depth.Load(index.xyz).r;
+  float4 world_space_position = mul(InverseViewProjectionMatrix, float4(d.x, -d.y, depth, 1.0f));
+  world_space_position.xyz /= world_space_position.w;
+  float3 wo = normalize(CameraPosition.xyz - world_space_position.xyz);
+
+  RNGSampler rng = InitRNGSampler(DispatchRaysIndex().xy, FrameNumber);
+
+  SurfaceInteraction<UE4BRDF> surface_interaction;
+  surface_interaction.Position = world_space_position.xyz;
+  surface_interaction.Normal = normal;
+  surface_interaction.wo = wo;
+  surface_interaction.brdf.BaseColor = base_color.rgba;
+  
+  surface_interaction.brdf.Roughness = surface.g;
+  surface_interaction.brdf.Metalness = surface.b;
+
+  uint i = (LIGHT_COUNT - 1) * rng.SampleUniform();
+  LightSample light_sample = GetLightSample(surface_interaction.Position, Lights[i]);
+  light_sample.pdf /= LIGHT_COUNT;
+
+  float3 DI = SampleDirectLighting(light_sample, surface_interaction);
+  float3 GI = IndirectIllumination(rng, surface_interaction);
+
+  gOutput[index.xy] = float4(DI + GI, 1.0f);
+  
+  
+//   if (FrameNumber < 2) {
+//     uint3 index = DispatchRaysIndex();
+//     gOutput[index.xy] = float4(0.0f, 0.0f, 0.0f, 1.0f);
+//   }
+// #define SAMPLE_COUNT 512
+//   if (FrameNumber < SAMPLE_COUNT * 2) {
+//     uint3 index = DispatchRaysIndex();
+//     float2 dims = float2(DispatchRaysDimensions().xy);
+//     float2 d = (((index.xy + 0.5f) / dims.xy) * 2.0f - 1.0f);
+//     float4 base_color = g_BaseColor.Load(index.xyz).rgba;
     
-    surface_interaction.brdf.Roughness = surface.g;
-    surface_interaction.brdf.Metalness = surface.b;
+//     if (base_color.x == 0.0f && base_color.y == 0.0f && base_color.z == 0.0f && base_color.w == 0.0f) {
+//       gOutput[index.xy] = float4(SKY_COLOR, 1.0f) * 10.0f;
+//       return;
+//     }
+    
+//     float3 normal = normalize(g_Normals.Load(index.xyz).xyz * 2.0f - 1.0f);
+//     float3 surface = g_Surface.Load(index.xyz).rgb;
+//     float depth = g_Depth.Load(index.xyz).r;
+//     float4 world_space_position = mul(InverseViewProjectionMatrix, float4(d.x, -d.y, depth, 1.0f));
+//     world_space_position.xyz /= world_space_position.w;
+//     float3 wo = normalize(CameraPosition.xyz - world_space_position.xyz);
+    
+//     RNGSampler rng = InitRNGSampler(DispatchRaysIndex().xy, FrameNumber);
 
-    uint i = (LIGHT_COUNT - 1) * rng.SampleUniform();
-    LightSample light_sample = GetLightSample(surface_interaction.Position, Lights[i]);
-    light_sample.pdf /= LIGHT_COUNT;
+//     SurfaceInteraction<UE4BRDF> surface_interaction;
+//     surface_interaction.Position = world_space_position.xyz;
+//     surface_interaction.Normal = normal;
+//     surface_interaction.wo = wo;
+//     surface_interaction.brdf.BaseColor = base_color.rgba;
+    
+//     surface_interaction.brdf.Roughness = surface.g;
+//     surface_interaction.brdf.Metalness = surface.b;
 
-    float3 DI = SampleDirectLighting(light_sample, surface_interaction);
-    float3 GI = IndirectIllumination(rng, surface_interaction);
+//     uint i = (LIGHT_COUNT - 1) * rng.SampleUniform();
+//     LightSample light_sample = GetLightSample(surface_interaction.Position, Lights[i]);
+//     light_sample.pdf /= LIGHT_COUNT;
 
-    gOutput[index.xy].xyz += float3((DI + GI) / (float)SAMPLE_COUNT);
-  }
+//     float3 DI = SampleDirectLighting(light_sample, surface_interaction);
+//     float3 GI = IndirectIllumination(rng, surface_interaction);
+
+//     gOutput[index.xy].xyz += float3((DI + GI) / (float)SAMPLE_COUNT);
+//   }
 
 }
 

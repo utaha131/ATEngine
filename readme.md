@@ -32,12 +32,12 @@ ATEngine is a cross-platform real time rendering engine. The goal of this projec
 | Job System | Multithreaded Job System based on Naughty Dog's presentation. | Completed |
 | Parallel Command List Recording | Multithreaded Rendering. | Completed |
 | SSR | Screen-Space Reflections. | Passing. Stochastic SSR Coming. |
-| Ray-Tracing Pipline | | In Progress. |
+| Ray-Tracing Pipline | | DXR implemented. VulkanRT in progress. |
 | Path Tracer | | In Progress. |
-| ReSTIR DI | | In Progress. |
-| ReSTIR GI | | TODO |
+| ReSTIR DI | | Naive biased implementation done. Optimizing. |
+| ReSTIR GI | | Naive biased implementation done. Optimizing. |
+| ReSTIR Denoising | | TODO |
 | TAA | Temporal Anti-Aliasing. | TODO |
-| GTAO |  | TODO |
 | Atmospheric Scattering |  | TODO |
 | Scene Loading | Editing, Saving and Loading Custom Scenes | TODO |
 
