@@ -245,6 +245,12 @@ namespace AT {
 			return v;
 		}
 
+		void AllocateDescriptorTable(const RHI::RootSignature root_signature, uint32_t parameter_index, RHI::DescriptorTable& descriptor_table) {
+			std::scoped_lock lock(m_lock);
+			m_Device->AllocateDescriptorTable(root_signature, parameter_index, descriptor_table);
+			m_descriptor_tables.push_back(descriptor_table);
+		}
+
 		template<typename T> GPUConstantBuffer* AllocateConstantBuffer() {
 			assert(sizeof(T) <= 2048);
 			if (sizeof(T) <= 256) {

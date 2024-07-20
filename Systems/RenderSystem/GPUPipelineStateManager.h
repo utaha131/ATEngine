@@ -379,11 +379,18 @@ namespace AT {
 		description.LocalRootSignatures;
 		description.MaxTraceRecursionDepth;
 		description.ShaderConfiguration;
-		description.ShaderLibraries;
+		for (uint32_t i = 0u; i < description.ShaderLibraries.size(); ++i) {
+			AT::Util::Hash::hash_combine(hash, description.ShaderLibraries[i].m_Shader);
+		}
 		return hash;
 	};
 
 	auto rhi_ray_tracing_pipeline_state_description_equality_function = [](const RHI::RayTracingPipelineStateDescription& description1, const RHI::RayTracingPipelineStateDescription& description2) {
+		for (uint32_t i = 0u; i < description1.ShaderLibraries.size(); ++i) {
+			if (description1.ShaderLibraries[i].m_Shader != description2.ShaderLibraries[i].m_Shader) {
+				return false;
+			}
+		}
 		return description1.GlobalRootSignature == description2.GlobalRootSignature;
 	};
 

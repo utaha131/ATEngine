@@ -30,14 +30,14 @@ float3 Fresnel_SchlickApprox(float3 F0, float VdotH) {
 float Distribution_GGX(float roughness, float NdotH) {
 	float a = roughness * roughness;
 	float a2 = a * a;
-	float denom = (PI * pow(pow(NdotH, 2) * (a2 - 1) + 1, 2)) + 0.0000001f;
+	float denom = (PI * pow(pow(NdotH, 2) * (a2 - 1) + 1, 2)) + 0.0001f;
 	return a2 / denom;
 }
 
 float Geometric(float roughness, float NdotV, float NdotL) {
 	float k = roughness * roughness / 2.0f;//(roughness + 1.0f) * (roughness + 1.0f) / 8.0f;
-	float G1 = NdotV / ((NdotV) * (1 - k) + k);
-	float G2 = NdotL / ((NdotL) * (1 - k) + k);
+	float G1 = NdotV / ((NdotV) * (1 - k) + k + 0.0001f);
+	float G2 = NdotL / ((NdotL) * (1 - k) + k) + 0.0001f;
 	return G1 * G2;
 }
 

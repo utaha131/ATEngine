@@ -27,6 +27,18 @@ float3 ACESFilm(float3 x)
 
 
 float4 PS(PixelIn input) : SV_Target {
+	// float2 uv_scale = 1.0f / float2(1280.0f, 720.0f);
+	// float3 color = float3(0.0f, 0.0f, 0.0f);
+
+	// for (int i = -1; i <= 1; ++i) {
+	// 	for (int j = -1; j <= 1; ++j) {
+	// 		float2 uv_offset = uv_scale * float2(j, i);
+	// 		color += g_InputTexture.Sample(g_Sampler, input.UV.xy + uv_offset).rgb;
+	// 	}
+	// }
+
+	// color /= 9.0f;
+
 	float3 color =  g_InputTexture.Sample(g_Sampler, input.UV.xy).rgb;
 	float lum = dot(color, float3(0.299, 0.587, 0.114));
 	float r = lum / (lum + 1.0f);

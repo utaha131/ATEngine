@@ -155,6 +155,7 @@
     <ClInclude Include="Systems\RenderSystem\RenderFeatures.h" />
     <ClInclude Include="Systems\RenderSystem\RenderPass.h" />
     <ClInclude Include="Systems\RenderSystem\RenderSystem.h" />
+    <ClInclude Include="Systems\RenderSystem\ReSTIRDI.h" />
     <ClInclude Include="Systems\RenderSystem\ShaderPrograms\CascadedShadowMappingShader.h" />
     <ClInclude Include="Systems\RenderSystem\ShaderPrograms\DeferredShader.h" />
     <ClInclude Include="Systems\RenderSystem\ShaderPrograms\DepthPrepassShader.h" />
@@ -166,6 +167,7 @@
     <ClInclude Include="Systems\RenderSystem\ShaderPrograms\OmnidirectionalShadowMappingShader.h" />
     <ClInclude Include="Systems\RenderSystem\ShaderPrograms\ReflectionShader.h" />
     <ClInclude Include="Systems\RenderSystem\ShaderPrograms\PreFilterEnviromentMapShader.h" />
+    <ClInclude Include="Systems\RenderSystem\ShaderPrograms\ReSTIRCompositeShader.h" />
     <ClInclude Include="Systems\RenderSystem\ShaderPrograms\ScreenSpaceAmbientOcclusionBlurShader.h" />
     <ClInclude Include="Systems\RenderSystem\ShaderPrograms\ScreenSpaceAmbientOcclusionShader.h" />
     <ClInclude Include="Systems\RenderSystem\ShaderPrograms\ScreenSpaceReflection.h" />

@@ -694,5 +694,11 @@
     <ClInclude Include="RHI\Vulkan\VKDevice.h">
       <Filter>RHI\Vulkan\Fence</Filter>
     </ClInclude>
+    <ClInclude Include="Systems\RenderSystem\ReSTIRDI.h">
+      <Filter>Systems\RenderSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="Systems\RenderSystem\ShaderPrograms\ReSTIRCompositeShader.h">
+      <Filter>Systems\RenderSystem\Shaders</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

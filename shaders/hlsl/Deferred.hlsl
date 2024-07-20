@@ -32,7 +32,7 @@ PixelIn VS(uint VertexID : SV_VertexID) {
 }
 
 float4 PS(PixelIn input): SV_Target {
-	BSDF_Parameters parameters;
+	BSDFParameters parameters;
 	float depth = g_DepthTexture.Sample(g_Sampler, input.UV).r;
 	float2 coords = float2(input.UV.x, 1.0f - input.UV.y) * 2.0f - 1.0f;
 	float4 view_space_fragment_position = mul(InverseProjectionMatrix, float4(coords.xy, depth, 1.0f)).xyzw;

@@ -7,7 +7,7 @@
 #include "GPUShaderManager.h"
 #include <mutex>
 #include <algorithm>
-#define _1_GB_ 536870912 * 2
+#define _1_GB_ 1073741824
 
 namespace AT {
 

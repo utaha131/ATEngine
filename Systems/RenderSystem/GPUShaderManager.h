@@ -53,6 +53,7 @@ namespace AT {
 					m_device->CreateShader(description, rhi_shader);
 					m_rhi_shader_cache[description] = rhi_shader;
 				}
+				assert(description.SourcePath == m_rhi_shader_cache[description]->GetDescription().SourcePath);
 				return m_rhi_shader_cache[description];
 			} else {
 				RHI::ShaderDescription description = ShaderDescriptionFromNameVK(path, shader_type);

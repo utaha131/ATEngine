@@ -70,7 +70,7 @@ namespace AT {
 					staging_index_buffer->GetRHIHandle()->Map();
 					staging_index_buffer->GetRHIHandle()->CopyData(0, mesh->Indices.data(), mesh->Indices.size() * sizeof(AT::VertexFormat::Index));
 					upload_batch.AddBufferUpload(mesh->IndexBuffer, staging_index_buffer);
-
+					
 					mesh->VBView.Buffer = mesh->VertexBuffer->GetRHIHandle();
 					mesh->VBView.Size = vertex_buffer_description.Size;
 					mesh->VBView.Stride = sizeof(AT::VertexFormat::Vertex);
@@ -85,6 +85,31 @@ namespace AT {
 					final_transition_batch.AddBufferTransition(mesh->VertexBuffer, RHI::BufferState::VERTEX_BUFFER);
 					final_transition_batch.AddBufferTransition(mesh->IndexBuffer, RHI::BufferState::INDEX_BUFFER);
 					mesh->Uploaded = true;
+
+					////New Allocation Scheme.
+					//RHI::BufferDescription buffer_description;
+					//buffer_description.Size = mesh->Vertices.size() * sizeof(AT::VertexFormat::Vertex) + mesh->Indices.size() * sizeof(AT::VertexFormat::Index);
+					//buffer_description.UsageFlags = RHI::BufferUsageFlag::NONE;
+					//mesh->VertexBuffer = m_ResourceManager.CreateBuffer(buffer_description);
+					//GPUBufferPtr staging_buffer = m_ResourceManager.CreateUploadBuffer(buffer_description);
+					//staging_buffer->GetRHIHandle()->Map();
+					//staging_buffer->GetRHIHandle()->CopyData(0, mesh->Vertices.data(), mesh->Vertices.size() * sizeof(AT::VertexFormat::Vertex));
+					//staging_buffer->GetRHIHandle()->CopyData(mesh->Vertices.size() * sizeof(AT::VertexFormat::Vertex), mesh->Indices.data(), mesh->Indices.size() * sizeof(AT::VertexFormat::Index));
+					//upload_batch.AddBufferUpload(mesh->VertexBuffer, staging_buffer);
+
+					//mesh->VBView.Buffer = mesh->VertexBuffer->GetRHIHandle();
+					//mesh->VBView.Size = mesh->Vertices.size() * sizeof(AT::VertexFormat::Vertex);
+					//mesh->VBView.Stride = sizeof(AT::VertexFormat::Vertex);
+
+					//mesh->IBView.Buffer = mesh->VertexBuffer->GetRHIHandle();
+					//mesh->IBView.Format = RHI::Format::R32_UINT;
+					//mesh->IBView.Size = mesh->Indices.size() * sizeof(AT::VertexFormat::Index);
+
+					//m_StagingResources.push_back(staging_buffer);
+
+					//final_transition_batch.AddBufferTransition(mesh->VertexBuffer, RHI::BufferState::VERTEX_BUFFER);
+					//mesh->Uploaded = true;
+				
 				}
 			}
 

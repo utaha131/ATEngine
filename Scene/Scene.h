@@ -105,6 +105,7 @@ namespace AT {
 	public:
 		std::vector<Light> m_Lights;
 		std::vector<ReflectionProbe> m_Probes;
+		DirectX::XMMATRIX m_PreviousViewProjectionMatrix;
 	};
 	typedef Scene* SceneRef;
 }

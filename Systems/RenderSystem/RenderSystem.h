@@ -5,7 +5,7 @@
 #else
 #define DEBUG false
 #endif
-#define FRAME_COUNT 3
+#define FRAME_COUNT 2
 #include "../RHI/RHI.h"
 #include "../Platform/IWindow.h"
 #include "GPUResourceManager.h"

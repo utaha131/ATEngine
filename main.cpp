@@ -36,7 +36,7 @@ void Simulation(AT::FrameParameters& frame_parameters, AT::SceneRef scene) {
 
 	AT::Input::MouseState state = AT::Input::GetMouseState();
 	DirectX::XMVECTOR rotation_delta = DirectX::XMVectorScale(DirectX::XMVector2Normalize(DirectX::XMVectorSet(state.delta_y, state.delta_x, 0.0f, 0.0f)), -7.5f / 2.0f / 3.1416f * frame_parameters.DeltaTime);
-	scene->Camera.Rotation = DirectX::XMVectorAdd(scene->Camera.Rotation, rotation_delta);
+	//scene->Camera.Rotation = DirectX::XMVectorAdd(scene->Camera.Rotation, rotation_delta);
 	AT::Input::Reset();
 	scene->m_Lights[1].PositionOrDirection = { -9.0f * cos(g_time), 1.0f, 0.0f, 1.0f};
 	g_time += frame_parameters.DeltaTime  / 2.0f;
@@ -69,7 +69,7 @@ HINSTANCE app_instance;int WINAPI WinMain(HINSTANCE instance, HINSTANCE previous
 	std::chrono::milliseconds time = {};
 	
 	std::chrono::steady_clock::time_point frame_end = {};
-	scene->Camera.VerticalFOV = 0.5f * 3.14159f;
+	scene->Camera.VerticalFOV = 0.3f * 3.14159f;
 	scene->Camera.Position = DirectX::XMVectorSet(9.0f, 1.0f, 0.0f, 1.0f);
 	scene->Camera.Rotation = DirectX::XMVectorSet(0.0f, 3.1415f / 2.0f, 0.0f, 0.0f);
 
@@ -298,6 +298,7 @@ HINSTANCE app_instance;int WINAPI WinMain(HINSTANCE instance, HINSTANCE previous
 
 	render_system.RegisterRenderer("PathTracer", new AT::PathTracer(resource_manager, instance_info_srv));
 	render_system.SetRenderer("PathTracer");
+	//render_system.SetRenderer("Deferred");
 
 	while (!quit) {
 		AT::WindowEvent ev;
@@ -310,13 +311,20 @@ HINSTANCE app_instance;int WINAPI WinMain(HINSTANCE instance, HINSTANCE previous
 		//Single Threaded Loop.
 		AT::FrameParameters parameters;
 		parameters.FrameNumber = frame_counter;
-		parameters.RenderData.FrameNumber = frame_counter;
+		parameters.RenderData.FrameNumber = frame_counter - (frame_counter % 2);
+
+		parameters.RenderData.PreviousViewProjectionMatrix = scene->m_PreviousViewProjectionMatrix;
+		render_data.PreviousViewProjectionMatrix = scene->m_PreviousViewProjectionMatrix;
+
 		parameters.DeltaTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - frame_end).count() / 1000.0f;
 		Simulation(parameters, scene);
 		frame_end = std::chrono::high_resolution_clock::now();
 		render_system.RunRenderLogic(parameters, scene);
 		render_system.RunGPUExecution(parameters);
 		++frame_counter;
+
+		scene->m_PreviousViewProjectionMatrix = render_data.ViewProjectionMatrix;
+		scene->m_PreviousViewProjectionMatrix = parameters.RenderData.ViewProjectionMatrix;
 	}
 	render_system.Wait();
 	delete window;

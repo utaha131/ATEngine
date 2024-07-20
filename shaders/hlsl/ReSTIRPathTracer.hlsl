@@ -31,6 +31,8 @@ struct Attributes {
   float2 BarycentricCoordinates;
 };
 
+#define M 64
+
 template <typename BxDF> LightSample GenerateSample(inout RNGSampler rng, in SurfaceInteraction<BxDF> surface_interaction) {//float3 position, float3 normal, float3 wo, float4 base_color, float roughness, float metalness) {
     Resivoir<LightSample> resivoir;
     resivoir.OutSample.wi = float3(0.0f, 0.0f, 0.0f);
@@ -39,7 +41,6 @@ template <typename BxDF> LightSample GenerateSample(inout RNGSampler rng, in Sur
     resivoir.OutSample.wi_distance = 1.0f;
     resivoir.WeightSum = 0.0f;
 
-    uint M = 64;
     for (uint i = 0; i < M; ++i) {
         //Sample Light.
         float random = rng.SampleUniform();
@@ -49,7 +50,7 @@ template <typename BxDF> LightSample GenerateSample(inout RNGSampler rng, in Sur
         float p_hat = length(surface_interaction.brdf.F(surface_interaction.wo, surface_interaction.Normal, light_sample.wi) * light_sample.L * 10.0f * abs(dot(light_sample.wi, surface_interaction.Normal)));
 
         float w = (p_hat) / light_sample.pdf / M;
-        resivoir.AddSample(rng, light_sample, w);
+        resivoir.AddSample(rng, light_sample, w, 0.0f);
     }
     LightSample output_sample = resivoir.OutSample;
     float p_hat = length(surface_interaction.brdf.F(surface_interaction.wo, surface_interaction.Normal, output_sample.wi) * output_sample.L * 10.0f * abs(dot(output_sample.wi, surface_interaction.Normal))) + 0.0001f;
@@ -59,10 +60,32 @@ template <typename BxDF> LightSample GenerateSample(inout RNGSampler rng, in Sur
     return output_sample;
 }
 
-template <typename BxDF> float3 ShadePixel(in LightSample light_sample, in SurfaceInteraction<BxDF> surface_interaction) {
-    return SampleDirectLighting<BxDF>(light_sample, surface_interaction);
-}
+// template <typename BxDF> void SpatialReuse(inout RNGSampler rng, in SurfaceInteraction<BxDF> surface_interaction) {
+//     Resivoir<LightSample> resivoir;
+//     resivoir.OutSample.wi = float3(0.0f, 0.0f, 0.0f);
+//     resivoir.OutSample.L = float3(0.0f, 0.0f, 0.0f);
+//     resivoir.OutSample.pdf = 1.0f;
+//     resivoir.OutSample.wi_distance = 1.0f;
+//     resivoir.WeightSum = 0.0f;
 
+//     for (uint i = 0; i < M; ++i) {
+//         //Sample Light.
+//         float random = rng.SampleUniform();
+//         uint index = floor((LIGHT_COUNT - 1) * random);
+//         LightSample light_sample = GetLightSample(surface_interaction.Position, Lights[index]);
+//         light_sample.pdf /= LIGHT_COUNT; // times uniform pdf.
+//         float p_hat = length(surface_interaction.brdf.F(surface_interaction.wo, surface_interaction.Normal, light_sample.wi) * light_sample.L * 10.0f * abs(dot(light_sample.wi, surface_interaction.Normal)));
+
+//         float w = (p_hat) / light_sample.pdf / M;
+//         resivoir.AddSample(rng, light_sample, w);
+//     }
+//     LightSample output_sample = resivoir.OutSample;
+//     float p_hat = length(surface_interaction.brdf.F(surface_interaction.wo, surface_interaction.Normal, output_sample.wi) * output_sample.L * 10.0f * abs(dot(output_sample.wi, surface_interaction.Normal))) + 0.0001f;
+//     float W  = resivoir.WeightSum / p_hat;
+//     output_sample.pdf = 1.0f / W;
+
+//     return output_sample;
+// }
 
 float3 TangentToWorld(float3 v, float3 N)
 {
@@ -133,13 +156,13 @@ void RayGen() {
 //   float3 GI = IndirectIllumination<UE4BRDF>(rng, surface_interaction);
 //   gOutput[index.xy] = float4(DI + GI, 1.0f);
   
-  
+// Multiple Samples. 
   if (FrameNumber < 3u) {
     uint3 index = DispatchRaysIndex();
     gOutput[index.xy] = float4(0.0f, 0.0f, 0.0f, 1.0f);
   }
 
-  if (FrameNumber < 256u * 3u) {
+  if (FrameNumber < 1024u * 3u) {
     uint3 index = DispatchRaysIndex();
     float2 dims = float2(DispatchRaysDimensions().xy);
     float2 d = (((index.xy + 0.5f) / dims.xy) * 2.0f - 1.0f);
@@ -164,7 +187,7 @@ void RayGen() {
 
     float3 DI = SampleDirectLighting<UE4BRDF>(light_sample, surface_interaction);
     float3 GI = IndirectIllumination<UE4BRDF>(rng, surface_interaction);
-    gOutput[index.xy].xyz += float3((DI + GI) / 256.0f);
+    gOutput[index.xy].xyz += float3((DI + GI) / 1024.0f);
   }
 
 }

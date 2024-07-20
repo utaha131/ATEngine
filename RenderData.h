@@ -43,6 +43,7 @@ namespace AT {
 		DirectX::XMMATRIX ProjectionMatrix;
 		DirectX::XMMATRIX ViewMatrix;
 		DirectX::XMMATRIX ViewProjectionMatrix;
+		DirectX::XMMATRIX PreviousViewProjectionMatrix;
 		DirectX::XMMATRIX InverseProjectionMatrix;
 		DirectX::XMMATRIX InverseViewMatrix;
 		DirectX::XMMATRIX InverseViewProjectionMatrix;

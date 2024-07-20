@@ -26,6 +26,7 @@
 #include "ShaderPrograms/IntegrateBRDFShader.h"
 #include "ShaderPrograms/ScreenSpaceReflection.h"
 #include "ShaderPrograms/ToneMappingShader.h"
+#include "ShaderPrograms/ReSTIRCompositeShader.h"
 static RHI::IRayTracingTopLevelAccelerationStructure* scene_srv;
 namespace AT::RenderFeatures {
 	//Generate Mips Pass
@@ -1439,7 +1440,7 @@ namespace AT::RenderFeatures {
 		AT::FrameGraphSRVRef depth_texture,
 		AT::FrameGraphUAVRef output_texture
 	) {
-		RHI::Shader shader = shader_manager.LoadRHIShader("ReSTIRPathTracer", RHI::ShaderType::LIBRARY);
+		RHI::Shader shader = shader_manager.LoadRHIShader("PathTracer", RHI::ShaderType::LIBRARY);
 		RHI::RayTracingShaderLibrary shader_library;
 		shader_library.SetLibrary(shader);
 		shader_library.DefineExport("RayGen");
@@ -1482,8 +1483,8 @@ namespace AT::RenderFeatures {
 		pipeline_description.LocalRootSignatures;
 		pipeline_description.ExportAssociations.emplace_back(export_association1);
 		pipeline_description.ShaderConfiguration.MaxAttributeSizeInBytes = 2 * sizeof(float);
-		pipeline_description.ShaderConfiguration.MaxPayloadSizeInBytes = 8 * sizeof(float);
-		pipeline_description.MaxTraceRecursionDepth = 3;
+		pipeline_description.ShaderConfiguration.MaxPayloadSizeInBytes = 27 * sizeof(float);
+		pipeline_description.MaxTraceRecursionDepth = 2;
 		
 		RHI::IRayTracingPipeline* pso = pipeline_state_manager.CreateOrGetRayTracingPipelineState(pipeline_description);
 
@@ -1507,7 +1508,7 @@ namespace AT::RenderFeatures {
 
 		RHI::DescriptorTable table;
 		RHI::Device device = graph_builder.GetDevice();
-		device->AllocateDescriptorTable(global_root_signature, 0, table);
+		graph_builder.AllocateDescriptorTable(global_root_signature, 0, table);
 
 		struct GlobalConstants {
 			DirectX::XMFLOAT4X4 InverseViewProjectionMatrix;
@@ -1543,6 +1544,1199 @@ namespace AT::RenderFeatures {
 			device->WriteDescriptorTable(table, 6, 1, &instance_info_buffer);
 			device->WriteDescriptorTable(table, 7, 1, &io.m_UnorderedAccessViewWrite[0]->RHIHandle);
 			command_list->DispatchRays(dispatch_ray_description);
+		});
+	}
+
+	inline void ReSTIRGenerateSamples(
+		const std::string& name,
+		AT::FrameGraphBuilder& graph_builder,
+		AT::GPUShaderManager& shader_manager,
+		AT::GPUPipelineStateManager& pipeline_state_manager,
+		AT::GPURootSignatureManager& root_signature_manager,
+		uint32_t width,
+		uint32_t height,
+		RenderData& render_data,
+		RHI::Buffer sbt_buffer,
+		RHI::ShaderResourceView instance_info_buffer,
+		AT::FrameGraphSRVRef base_color_texture,
+		AT::FrameGraphSRVRef normal_texture,
+		AT::FrameGraphSRVRef surface_texture,
+		AT::FrameGraphSRVRef depth_texture,
+		AT::FrameGraphUAVRef output_texture
+	) {
+		RHI::Shader shader = shader_manager.LoadRHIShader("ReSTIR_DI_GenerateInitialSamples", RHI::ShaderType::LIBRARY);
+		RHI::RayTracingShaderLibrary shader_library;
+		shader_library.SetLibrary(shader);
+		shader_library.DefineExport("RayGen");
+		shader_library.DefineExport("ClosestHit");
+		shader_library.DefineExport("Miss");
+
+		RHI::RayTracingHitGroup hit_group;
+		hit_group.Name = "HitGroup";
+		hit_group.Type = RHI::RayTracingHitGroupType::TRIANGLES;
+		hit_group.AnyHitShaderImport;
+		hit_group.ClosestHitShaderImport = "ClosestHit";
+		hit_group.IntersectionShaderImport;
+
+		RHI::RayTracingExportAssociation export_association1;
+		export_association1.Type = RHI::RayTracingExportAssociationType::SHADER_PAYLOAD;
+		export_association1.ExportNames.push_back("HitGroup");
+		export_association1.AssociationObjectIndex = 0;
+
+		RHI::RootSignatureDescription root_signature_description;
+		root_signature_description.Parameters.push_back(RHI::RootParameter{
+			.RootParameterType = RHI::RootParameterType::DESCRIPTOR_TABLE,
+				.RootDescriptorTable = RHI::RootDescriptorTable{
+					.Ranges = {
+						RHI::RootDescriptorTableRange{.RangeType = RHI::DescriptorRangeType::CONSTANT_BUFFER_VIEW, .DescriptorCount = 1 },
+						RHI::RootDescriptorTableRange{.RangeType = RHI::DescriptorRangeType::SHADER_RESOURCE_VIEW_TEXTURE, .DescriptorCount = 6 },
+						RHI::RootDescriptorTableRange{.RangeType = RHI::DescriptorRangeType::UNORDERED_ACCESS_VIEW_TEXTURE, .DescriptorCount = 1 }
+					}
+			}
+		});
+		root_signature_description.StaticSamplers.push_back({});
+
+		RHI::RootSignature global_root_signature = root_signature_manager.CreateOrGetRootSignature(root_signature_description);
+
+
+
+		RHI::RayTracingPipelineStateDescription pipeline_description;
+		pipeline_description.ShaderLibraries.emplace_back(shader_library);
+		pipeline_description.HitGroups.emplace_back(hit_group);
+		pipeline_description.GlobalRootSignature = global_root_signature;
+		pipeline_description.LocalRootSignatures;
+		pipeline_description.ExportAssociations.emplace_back(export_association1);
+		pipeline_description.ShaderConfiguration.MaxAttributeSizeInBytes = 2 * sizeof(float);
+		pipeline_description.ShaderConfiguration.MaxPayloadSizeInBytes = 27 * sizeof(float);
+		pipeline_description.MaxTraceRecursionDepth = 3;
+
+		RHI::IRayTracingPipeline* pso = pipeline_state_manager.CreateOrGetRayTracingPipelineState(pipeline_description);
+
+
+		sbt_buffer->Map();
+		void* RayGen = pso->GetShaderIdentifier("RayGen");
+		sbt_buffer->CopyData(0, RayGen, 32);
+
+		void* Miss = pso->GetShaderIdentifier("Miss");
+		sbt_buffer->CopyData(64, Miss, 32);
+
+		void* HitGroup = pso->GetShaderIdentifier("HitGroup");
+		sbt_buffer->CopyData(128, HitGroup, 32);
+
+		AT::FrameGraphRenderPassIO io;
+		io.AddShaderResource(base_color_texture);
+		io.AddShaderResource(normal_texture);
+		io.AddShaderResource(surface_texture);
+		io.AddShaderResource(depth_texture);
+		io.AddUnorderedAccessWrite(output_texture);
+
+		RHI::DescriptorTable table;
+		RHI::Device device = graph_builder.GetDevice();
+		graph_builder.AllocateDescriptorTable(global_root_signature, 0, table);
+
+		struct GlobalConstants {
+			DirectX::XMFLOAT4X4 InverseViewProjectionMatrix;
+			DirectX::XMFLOAT4X4 PreviousViewProjectionMatrix;
+			DirectX::XMFLOAT4 CameraPosition;
+			uint32_t FrameNumber;
+		} constants;
+
+		DirectX::XMStoreFloat4x4(&constants.InverseViewProjectionMatrix, render_data.InverseViewProjectionMatrix);
+		DirectX::XMStoreFloat4x4(&constants.PreviousViewProjectionMatrix, render_data.PreviousViewProjectionMatrix);
+		DirectX::XMStoreFloat4(&constants.CameraPosition, render_data.CameraPosition);
+		constants.FrameNumber = render_data.FrameNumber;
+		GPUConstantBuffer* cbuffer = graph_builder.AllocateConstantBuffer<GlobalConstants>();
+		cbuffer->WriteData(constants);
+
+		//Upload Materials.
+
+		graph_builder.AddRenderPass(name, io, AT::FrameGraphRenderPass::PIPELINE_TYPE::GRAPHICS, [=](RHI::CommandList command_list) {
+			command_list->SetComputeRootSignature(global_root_signature);
+			command_list->SetRayTracingPipeline(pso);
+			command_list->SetComputeRootDescriptorTable(0, table);
+			RHI::RayTracingDispatchRaysDescription dispatch_ray_description;
+			dispatch_ray_description.Width = 1280;
+			dispatch_ray_description.Height = 720;
+			dispatch_ray_description.Depth = 1;
+			dispatch_ray_description.RayGenerationShaderRecord = { .Buffer = sbt_buffer, .Offset = 0, .Size = 32 };
+			dispatch_ray_description.MissShaderTable = { .Buffer = sbt_buffer, .Offset = 64, .Size = 32, .Stride = 32 };
+			dispatch_ray_description.HitGroupTable = { .Buffer = sbt_buffer, .Offset = 128, .Size = 32, .Stride = 32 };
+			device->WriteDescriptorTable(table, 0, 1, &cbuffer->GetNative());
+			device->WriteDescriptorTable(table, 1, 1, &scene_srv);
+			device->WriteDescriptorTable(table, 2, 1, &base_color_texture->RHIHandle);
+			device->WriteDescriptorTable(table, 3, 1, &normal_texture->RHIHandle);
+			device->WriteDescriptorTable(table, 4, 1, &surface_texture->RHIHandle);
+			device->WriteDescriptorTable(table, 5, 1, &depth_texture->RHIHandle);
+			device->WriteDescriptorTable(table, 6, 1, &instance_info_buffer);
+			device->WriteDescriptorTable(table, 7, 1, &io.m_UnorderedAccessViewWrite[0]->RHIHandle);
+			command_list->DispatchRays(dispatch_ray_description);
+		});
+	}
+
+	inline void ReSTIRTemporalSamples(
+		const std::string& name,
+		AT::FrameGraphBuilder& graph_builder,
+		AT::GPUShaderManager& shader_manager,
+		AT::GPUPipelineStateManager& pipeline_state_manager,
+		AT::GPURootSignatureManager& root_signature_manager,
+		uint32_t width,
+		uint32_t height,
+		RenderData& render_data,
+		RHI::Buffer sbt_buffer,
+		RHI::ShaderResourceView instance_info_buffer,
+		AT::FrameGraphSRVRef base_color_texture,
+		AT::FrameGraphSRVRef normal_texture,
+		AT::FrameGraphSRVRef surface_texture,
+		AT::FrameGraphSRVRef depth_texture,
+		AT::FrameGraphUAVRef previous_reservoir_buffer,
+		AT::FrameGraphUAVRef reservoir_buffer,
+		AT::FrameGraphUAVRef output_texture
+	) {
+		RHI::Shader shader = shader_manager.LoadRHIShader("ReSTIR_DI_TemporalSampling", RHI::ShaderType::LIBRARY);
+		RHI::RayTracingShaderLibrary shader_library;
+		shader_library.SetLibrary(shader);
+		shader_library.DefineExport("RayGen");
+		shader_library.DefineExport("ClosestHit");
+		shader_library.DefineExport("Miss");
+
+		RHI::RayTracingHitGroup hit_group;
+		hit_group.Name = "HitGroup";
+		hit_group.Type = RHI::RayTracingHitGroupType::TRIANGLES;
+		hit_group.AnyHitShaderImport;
+		hit_group.ClosestHitShaderImport = "ClosestHit";
+		hit_group.IntersectionShaderImport;
+
+		RHI::RayTracingExportAssociation export_association1;
+		export_association1.Type = RHI::RayTracingExportAssociationType::SHADER_PAYLOAD;
+		export_association1.ExportNames.push_back("HitGroup");
+		export_association1.AssociationObjectIndex = 0;
+
+		RHI::RootSignatureDescription root_signature_description;
+		root_signature_description.Parameters.push_back(RHI::RootParameter{
+			.RootParameterType = RHI::RootParameterType::DESCRIPTOR_TABLE,
+				.RootDescriptorTable = RHI::RootDescriptorTable{
+					.Ranges = {
+						RHI::RootDescriptorTableRange{.RangeType = RHI::DescriptorRangeType::CONSTANT_BUFFER_VIEW, .DescriptorCount = 1 },
+						RHI::RootDescriptorTableRange{.RangeType = RHI::DescriptorRangeType::SHADER_RESOURCE_VIEW_TEXTURE, .DescriptorCount = 6 },
+						RHI::RootDescriptorTableRange{.RangeType = RHI::DescriptorRangeType::UNORDERED_ACCESS_VIEW_TEXTURE, .DescriptorCount = 3 }
+					}
+			}
+		});
+		root_signature_description.StaticSamplers.push_back({});
+
+		RHI::RootSignature global_root_signature = root_signature_manager.CreateOrGetRootSignature(root_signature_description);
+
+
+
+		RHI::RayTracingPipelineStateDescription pipeline_description;
+		pipeline_description.ShaderLibraries.emplace_back(shader_library);
+		pipeline_description.HitGroups.emplace_back(hit_group);
+		pipeline_description.GlobalRootSignature = global_root_signature;
+		pipeline_description.LocalRootSignatures;
+		pipeline_description.ExportAssociations.emplace_back(export_association1);
+		pipeline_description.ShaderConfiguration.MaxAttributeSizeInBytes = 2 * sizeof(float);
+		pipeline_description.ShaderConfiguration.MaxPayloadSizeInBytes = 27 * sizeof(float);
+		pipeline_description.MaxTraceRecursionDepth = 3;
+
+		RHI::IRayTracingPipeline* pso = pipeline_state_manager.CreateOrGetRayTracingPipelineState(pipeline_description);
+
+
+		sbt_buffer->Map();
+		void* RayGen = pso->GetShaderIdentifier("RayGen");
+		sbt_buffer->CopyData(0, RayGen, 32);
+
+		void* Miss = pso->GetShaderIdentifier("Miss");
+		sbt_buffer->CopyData(64, Miss, 32);
+
+		void* HitGroup = pso->GetShaderIdentifier("HitGroup");
+		sbt_buffer->CopyData(128, HitGroup, 32);
+
+		AT::FrameGraphRenderPassIO io;
+		io.AddShaderResource(base_color_texture);
+		io.AddShaderResource(normal_texture);
+		io.AddShaderResource(surface_texture);
+		io.AddShaderResource(depth_texture);
+		io.AddUnorderedAccessRead(reservoir_buffer);
+		//io.AddUnorderedAccessRead(previous_resivoir_buffer);
+		io.AddUnorderedAccessWrite(output_texture);
+
+		RHI::DescriptorTable table;
+		RHI::Device device = graph_builder.GetDevice();
+		graph_builder.AllocateDescriptorTable(global_root_signature, 0, table);
+
+		struct GlobalConstants {
+			DirectX::XMFLOAT4X4 InverseViewProjectionMatrix;
+			DirectX::XMFLOAT4X4 PreviousViewProjectionMatrix;
+			DirectX::XMFLOAT4 CameraPosition;
+			uint32_t FrameNumber;
+		} constants;
+
+		DirectX::XMStoreFloat4x4(&constants.InverseViewProjectionMatrix, render_data.InverseViewProjectionMatrix);
+		DirectX::XMStoreFloat4x4(&constants.PreviousViewProjectionMatrix, render_data.PreviousViewProjectionMatrix);
+		DirectX::XMStoreFloat4(&constants.CameraPosition, render_data.CameraPosition);
+		constants.FrameNumber = render_data.FrameNumber;
+		GPUConstantBuffer* cbuffer = graph_builder.AllocateConstantBuffer<GlobalConstants>();
+		cbuffer->WriteData(constants);
+
+		//Upload Materials.
+
+		graph_builder.AddRenderPass(name, io, AT::FrameGraphRenderPass::PIPELINE_TYPE::GRAPHICS, [=](RHI::CommandList command_list) {
+			command_list->SetComputeRootSignature(global_root_signature);
+			command_list->SetRayTracingPipeline(pso);
+			command_list->SetComputeRootDescriptorTable(0, table);
+			RHI::RayTracingDispatchRaysDescription dispatch_ray_description;
+			dispatch_ray_description.Width = 1280;
+			dispatch_ray_description.Height = 720;
+			dispatch_ray_description.Depth = 1;
+			dispatch_ray_description.RayGenerationShaderRecord = { .Buffer = sbt_buffer, .Offset = 0, .Size = 32 };
+			dispatch_ray_description.MissShaderTable = { .Buffer = sbt_buffer, .Offset = 64, .Size = 32, .Stride = 32 };
+			dispatch_ray_description.HitGroupTable = { .Buffer = sbt_buffer, .Offset = 128, .Size = 32, .Stride = 32 };
+			device->WriteDescriptorTable(table, 0, 1, &cbuffer->GetNative());
+			device->WriteDescriptorTable(table, 1, 1, &scene_srv);
+			device->WriteDescriptorTable(table, 2, 1, &base_color_texture->RHIHandle);
+			device->WriteDescriptorTable(table, 3, 1, &normal_texture->RHIHandle);
+			device->WriteDescriptorTable(table, 4, 1, &surface_texture->RHIHandle);
+			device->WriteDescriptorTable(table, 5, 1, &depth_texture->RHIHandle);
+			device->WriteDescriptorTable(table, 6, 1, &instance_info_buffer);
+			device->WriteDescriptorTable(table, 7, 1, &io.m_UnorderedAccessViewWrite[0]->RHIHandle);
+			device->WriteDescriptorTable(table, 9, 1, &previous_reservoir_buffer->RHIHandle);
+			device->WriteDescriptorTable(table, 8, 1, &reservoir_buffer->RHIHandle);
+			command_list->DispatchRays(dispatch_ray_description);
+			});
+	}
+
+	inline void ReSTIRSpatialSamples(
+		const std::string& name,
+		AT::FrameGraphBuilder& graph_builder,
+		AT::GPUShaderManager& shader_manager,
+		AT::GPUPipelineStateManager& pipeline_state_manager,
+		AT::GPURootSignatureManager& root_signature_manager,
+		uint32_t width,
+		uint32_t height,
+		RenderData& render_data,
+		RHI::Buffer sbt_buffer,
+		RHI::ShaderResourceView instance_info_buffer,
+		AT::FrameGraphSRVRef base_color_texture,
+		AT::FrameGraphSRVRef normal_texture,
+		AT::FrameGraphSRVRef surface_texture,
+		AT::FrameGraphSRVRef depth_texture,
+		AT::FrameGraphUAVRef reservoir_buffer,
+		AT::FrameGraphUAVRef output_texture
+	) {
+		RHI::Shader shader = shader_manager.LoadRHIShader("ReSTIR_DI_SpatialSamplingBetaTest", RHI::ShaderType::LIBRARY);
+		RHI::RayTracingShaderLibrary shader_library;
+		shader_library.SetLibrary(shader);
+		shader_library.DefineExport("RayGen");
+		shader_library.DefineExport("ClosestHit");
+		shader_library.DefineExport("Miss");
+
+		RHI::RayTracingHitGroup hit_group;
+		hit_group.Name = "HitGroup";
+		hit_group.Type = RHI::RayTracingHitGroupType::TRIANGLES;
+		hit_group.AnyHitShaderImport;
+		hit_group.ClosestHitShaderImport = "ClosestHit";
+		hit_group.IntersectionShaderImport;
+
+		RHI::RayTracingExportAssociation export_association1;
+		export_association1.Type = RHI::RayTracingExportAssociationType::SHADER_PAYLOAD;
+		export_association1.ExportNames.push_back("HitGroup");
+		export_association1.AssociationObjectIndex = 0;
+
+		RHI::RootSignatureDescription root_signature_description;
+		root_signature_description.Parameters.push_back(RHI::RootParameter{
+			.RootParameterType = RHI::RootParameterType::DESCRIPTOR_TABLE,
+				.RootDescriptorTable = RHI::RootDescriptorTable{
+					.Ranges = {
+						RHI::RootDescriptorTableRange{.RangeType = RHI::DescriptorRangeType::CONSTANT_BUFFER_VIEW, .DescriptorCount = 1 },
+						RHI::RootDescriptorTableRange{.RangeType = RHI::DescriptorRangeType::SHADER_RESOURCE_VIEW_TEXTURE, .DescriptorCount = 6 },
+						RHI::RootDescriptorTableRange{.RangeType = RHI::DescriptorRangeType::UNORDERED_ACCESS_VIEW_TEXTURE, .DescriptorCount = 2 }
+					}
+			}
+		});
+		root_signature_description.StaticSamplers.push_back({});
+
+		RHI::RootSignature global_root_signature = root_signature_manager.CreateOrGetRootSignature(root_signature_description);
+
+
+
+		RHI::RayTracingPipelineStateDescription pipeline_description;
+		pipeline_description.ShaderLibraries.emplace_back(shader_library);
+		pipeline_description.HitGroups.emplace_back(hit_group);
+		pipeline_description.GlobalRootSignature = global_root_signature;
+		pipeline_description.LocalRootSignatures;
+		pipeline_description.ExportAssociations.emplace_back(export_association1);
+		pipeline_description.ShaderConfiguration.MaxAttributeSizeInBytes = 2 * sizeof(float);
+		pipeline_description.ShaderConfiguration.MaxPayloadSizeInBytes = 27 * sizeof(float);
+		pipeline_description.MaxTraceRecursionDepth = 3;
+
+		RHI::IRayTracingPipeline* pso = pipeline_state_manager.CreateOrGetRayTracingPipelineState(pipeline_description);
+
+
+		sbt_buffer->Map();
+		void* RayGen = pso->GetShaderIdentifier("RayGen");
+		sbt_buffer->CopyData(0, RayGen, 32);
+
+		void* Miss = pso->GetShaderIdentifier("Miss");
+		sbt_buffer->CopyData(64, Miss, 32);
+
+		void* HitGroup = pso->GetShaderIdentifier("HitGroup");
+		sbt_buffer->CopyData(128, HitGroup, 32);
+
+		AT::FrameGraphRenderPassIO io;
+		io.AddShaderResource(base_color_texture);
+		io.AddShaderResource(normal_texture);
+		io.AddShaderResource(surface_texture);
+		io.AddShaderResource(depth_texture);
+		io.AddUnorderedAccessRead(reservoir_buffer);
+		io.AddUnorderedAccessWrite(output_texture);
+
+		RHI::DescriptorTable table;
+		RHI::Device device = graph_builder.GetDevice();
+		graph_builder.AllocateDescriptorTable(global_root_signature, 0, table);
+
+		struct GlobalConstants {
+			DirectX::XMFLOAT4X4 InverseViewProjectionMatrix;
+			DirectX::XMFLOAT4X4 PreviousViewProjectionMatrix;
+			DirectX::XMFLOAT4 CameraPosition;
+			uint32_t FrameNumber;
+		} constants;
+
+		DirectX::XMStoreFloat4x4(&constants.InverseViewProjectionMatrix, render_data.InverseViewProjectionMatrix);
+		DirectX::XMStoreFloat4x4(&constants.PreviousViewProjectionMatrix, render_data.PreviousViewProjectionMatrix);
+		DirectX::XMStoreFloat4(&constants.CameraPosition, render_data.CameraPosition);
+		constants.FrameNumber = render_data.FrameNumber;
+		GPUConstantBuffer* cbuffer = graph_builder.AllocateConstantBuffer<GlobalConstants>();
+		cbuffer->WriteData(constants);
+
+		//Upload Materials.
+
+		graph_builder.AddRenderPass(name, io, AT::FrameGraphRenderPass::PIPELINE_TYPE::GRAPHICS, [=](RHI::CommandList command_list) {
+			command_list->SetComputeRootSignature(global_root_signature);
+			command_list->SetRayTracingPipeline(pso);
+			command_list->SetComputeRootDescriptorTable(0, table);
+			RHI::RayTracingDispatchRaysDescription dispatch_ray_description;
+			dispatch_ray_description.Width = 1280;
+			dispatch_ray_description.Height = 720;
+			dispatch_ray_description.Depth = 1;
+			dispatch_ray_description.RayGenerationShaderRecord = { .Buffer = sbt_buffer, .Offset = 0, .Size = 32 };
+			dispatch_ray_description.MissShaderTable = { .Buffer = sbt_buffer, .Offset = 64, .Size = 32, .Stride = 32 };
+			dispatch_ray_description.HitGroupTable = { .Buffer = sbt_buffer, .Offset = 128, .Size = 32, .Stride = 32 };
+			device->WriteDescriptorTable(table, 0, 1, &cbuffer->GetNative());
+			device->WriteDescriptorTable(table, 1, 1, &scene_srv);
+			device->WriteDescriptorTable(table, 2, 1, &base_color_texture->RHIHandle);
+			device->WriteDescriptorTable(table, 3, 1, &normal_texture->RHIHandle);
+			device->WriteDescriptorTable(table, 4, 1, &surface_texture->RHIHandle);
+			device->WriteDescriptorTable(table, 5, 1, &depth_texture->RHIHandle);
+			device->WriteDescriptorTable(table, 6, 1, &instance_info_buffer);
+			device->WriteDescriptorTable(table, 7, 1, &io.m_UnorderedAccessViewWrite[0]->RHIHandle);
+			device->WriteDescriptorTable(table, 8, 1, &reservoir_buffer->RHIHandle);
+			command_list->DispatchRays(dispatch_ray_description);
+		});
+	}
+
+
+
+	inline void ReSTIRFinalShade(
+		const std::string& name,
+		AT::FrameGraphBuilder& graph_builder,
+		AT::GPUShaderManager& shader_manager,
+		AT::GPUPipelineStateManager& pipeline_state_manager,
+		AT::GPURootSignatureManager& root_signature_manager,
+		uint32_t width,
+		uint32_t height,
+		RenderData& render_data,
+		RHI::Buffer sbt_buffer,
+		RHI::ShaderResourceView instance_info_buffer,
+		AT::FrameGraphSRVRef base_color_texture,
+		AT::FrameGraphSRVRef normal_texture,
+		AT::FrameGraphSRVRef surface_texture,
+		AT::FrameGraphSRVRef depth_texture,
+		AT::FrameGraphUAVRef save_resivoir_buffer,
+		AT::FrameGraphUAVRef reservoir_buffer,
+		AT::FrameGraphUAVRef output_texture
+	) {
+		RHI::Shader shader = shader_manager.LoadRHIShader("ReSTIR_DI_FinalShading", RHI::ShaderType::LIBRARY);
+		RHI::RayTracingShaderLibrary shader_library;
+		shader_library.SetLibrary(shader);
+		shader_library.DefineExport("RayGen");
+		shader_library.DefineExport("ClosestHit");
+		shader_library.DefineExport("Miss");
+
+		RHI::RayTracingHitGroup hit_group;
+		hit_group.Name = "HitGroup";
+		hit_group.Type = RHI::RayTracingHitGroupType::TRIANGLES;
+		hit_group.AnyHitShaderImport;
+		hit_group.ClosestHitShaderImport = "ClosestHit";
+		hit_group.IntersectionShaderImport;
+
+		RHI::RayTracingExportAssociation export_association1;
+		export_association1.Type = RHI::RayTracingExportAssociationType::SHADER_PAYLOAD;
+		export_association1.ExportNames.push_back("HitGroup");
+		export_association1.AssociationObjectIndex = 0;
+
+		RHI::RootSignatureDescription root_signature_description;
+		root_signature_description.Parameters.push_back(RHI::RootParameter{
+			.RootParameterType = RHI::RootParameterType::DESCRIPTOR_TABLE,
+				.RootDescriptorTable = RHI::RootDescriptorTable{
+					.Ranges = {
+						RHI::RootDescriptorTableRange{.RangeType = RHI::DescriptorRangeType::CONSTANT_BUFFER_VIEW, .DescriptorCount = 1 },
+						RHI::RootDescriptorTableRange{.RangeType = RHI::DescriptorRangeType::SHADER_RESOURCE_VIEW_TEXTURE, .DescriptorCount = 6 },
+						RHI::RootDescriptorTableRange{.RangeType = RHI::DescriptorRangeType::UNORDERED_ACCESS_VIEW_TEXTURE, .DescriptorCount = 3 }
+					}
+			}
+		});
+		root_signature_description.StaticSamplers.push_back({});
+
+		RHI::RootSignature global_root_signature = root_signature_manager.CreateOrGetRootSignature(root_signature_description);
+
+
+
+		RHI::RayTracingPipelineStateDescription pipeline_description;
+		pipeline_description.ShaderLibraries.emplace_back(shader_library);
+		pipeline_description.HitGroups.emplace_back(hit_group);
+		pipeline_description.GlobalRootSignature = global_root_signature;
+		pipeline_description.LocalRootSignatures;
+		pipeline_description.ExportAssociations.emplace_back(export_association1);
+		pipeline_description.ShaderConfiguration.MaxAttributeSizeInBytes = 2 * sizeof(float);
+		pipeline_description.ShaderConfiguration.MaxPayloadSizeInBytes = 27 * sizeof(float);
+		pipeline_description.MaxTraceRecursionDepth = 3;
+
+		RHI::IRayTracingPipeline* pso = pipeline_state_manager.CreateOrGetRayTracingPipelineState(pipeline_description);
+
+
+		sbt_buffer->Map();
+		void* RayGen = pso->GetShaderIdentifier("RayGen");
+		sbt_buffer->CopyData(0, RayGen, 32);
+
+		void* Miss = pso->GetShaderIdentifier("Miss");
+		sbt_buffer->CopyData(64, Miss, 32);
+
+		void* HitGroup = pso->GetShaderIdentifier("HitGroup");
+		sbt_buffer->CopyData(128, HitGroup, 32);
+
+		AT::FrameGraphRenderPassIO io;
+		io.AddShaderResource(base_color_texture);
+		io.AddShaderResource(normal_texture);
+		io.AddShaderResource(surface_texture);
+		io.AddShaderResource(depth_texture);
+		io.AddUnorderedAccessRead(reservoir_buffer);
+		io.AddUnorderedAccessWrite(output_texture);
+
+		RHI::DescriptorTable table;
+		RHI::Device device = graph_builder.GetDevice();
+		graph_builder.AllocateDescriptorTable(global_root_signature, 0, table);
+
+		struct GlobalConstants {
+			DirectX::XMFLOAT4X4 InverseViewProjectionMatrix;
+			DirectX::XMFLOAT4X4 PreviousViewProjectionMatrix;
+			DirectX::XMFLOAT4 CameraPosition;
+			uint32_t FrameNumber;
+		} constants;
+
+		DirectX::XMStoreFloat4x4(&constants.InverseViewProjectionMatrix, render_data.InverseViewProjectionMatrix);
+		DirectX::XMStoreFloat4x4(&constants.PreviousViewProjectionMatrix, render_data.PreviousViewProjectionMatrix);
+		DirectX::XMStoreFloat4(&constants.CameraPosition, render_data.CameraPosition);
+		constants.FrameNumber = render_data.FrameNumber;
+		GPUConstantBuffer* cbuffer = graph_builder.AllocateConstantBuffer<GlobalConstants>();
+		cbuffer->WriteData(constants);
+
+		//Upload Materials.
+
+		graph_builder.AddRenderPass(name, io, AT::FrameGraphRenderPass::PIPELINE_TYPE::GRAPHICS, [=](RHI::CommandList command_list) {
+			command_list->SetComputeRootSignature(global_root_signature);
+			command_list->SetRayTracingPipeline(pso);
+			command_list->SetComputeRootDescriptorTable(0, table);
+			RHI::RayTracingDispatchRaysDescription dispatch_ray_description;
+			dispatch_ray_description.Width = 1280;
+			dispatch_ray_description.Height = 720;
+			dispatch_ray_description.Depth = 1;
+			dispatch_ray_description.RayGenerationShaderRecord = { .Buffer = sbt_buffer, .Offset = 0, .Size = 32 };
+			dispatch_ray_description.MissShaderTable = { .Buffer = sbt_buffer, .Offset = 64, .Size = 32, .Stride = 32 };
+			dispatch_ray_description.HitGroupTable = { .Buffer = sbt_buffer, .Offset = 128, .Size = 32, .Stride = 32 };
+			device->WriteDescriptorTable(table, 0, 1, &cbuffer->GetNative());
+			device->WriteDescriptorTable(table, 1, 1, &scene_srv);
+			device->WriteDescriptorTable(table, 2, 1, &base_color_texture->RHIHandle);
+			device->WriteDescriptorTable(table, 3, 1, &normal_texture->RHIHandle);
+			device->WriteDescriptorTable(table, 4, 1, &surface_texture->RHIHandle);
+			device->WriteDescriptorTable(table, 5, 1, &depth_texture->RHIHandle);
+			device->WriteDescriptorTable(table, 6, 1, &instance_info_buffer);
+			device->WriteDescriptorTable(table, 7, 1, &io.m_UnorderedAccessViewWrite[0]->RHIHandle);
+			device->WriteDescriptorTable(table, 8, 1, &reservoir_buffer->RHIHandle);
+			device->WriteDescriptorTable(table, 9, 1, &save_resivoir_buffer->RHIHandle);
+			command_list->DispatchRays(dispatch_ray_description);
+		});
+	}
+
+
+
+	//ReSTI GI
+	inline void ReSTIR_GI_GenerateSamples(
+		const std::string& name,
+		AT::FrameGraphBuilder& graph_builder,
+		AT::GPUShaderManager& shader_manager,
+		AT::GPUPipelineStateManager& pipeline_state_manager,
+		AT::GPURootSignatureManager& root_signature_manager,
+		uint32_t width,
+		uint32_t height,
+		RenderData& render_data,
+		RHI::Buffer sbt_buffer,
+		RHI::ShaderResourceView instance_info_buffer,
+		AT::FrameGraphSRVRef base_color_texture,
+		AT::FrameGraphSRVRef normal_texture,
+		AT::FrameGraphSRVRef surface_texture,
+		AT::FrameGraphSRVRef depth_texture,
+		AT::FrameGraphUAVRef reservoir_output,
+		AT::FrameGraphUAVRef reservoir_output1,
+		AT::FrameGraphUAVRef reservoir_output2,
+		AT::FrameGraphUAVRef reservoir_output3
+	) {
+		RHI::Shader shader = shader_manager.LoadRHIShader("ReSTIR_GI_InitialSampling", RHI::ShaderType::LIBRARY);
+		RHI::RayTracingShaderLibrary shader_library;
+		shader_library.SetLibrary(shader);
+		shader_library.DefineExport("RayGen");
+		shader_library.DefineExport("ClosestHit");
+		shader_library.DefineExport("Miss");
+
+		RHI::RayTracingHitGroup hit_group;
+		hit_group.Name = "HitGroup";
+		hit_group.Type = RHI::RayTracingHitGroupType::TRIANGLES;
+		hit_group.AnyHitShaderImport;
+		hit_group.ClosestHitShaderImport = "ClosestHit";
+		hit_group.IntersectionShaderImport;
+
+		RHI::RayTracingExportAssociation export_association1;
+		export_association1.Type = RHI::RayTracingExportAssociationType::SHADER_PAYLOAD;
+		export_association1.ExportNames.push_back("HitGroup");
+		export_association1.AssociationObjectIndex = 0;
+
+		RHI::RootSignatureDescription root_signature_description;
+		root_signature_description.Parameters.push_back(RHI::RootParameter{
+			.RootParameterType = RHI::RootParameterType::DESCRIPTOR_TABLE,
+				.RootDescriptorTable = RHI::RootDescriptorTable{
+					.Ranges = {
+						RHI::RootDescriptorTableRange{.RangeType = RHI::DescriptorRangeType::CONSTANT_BUFFER_VIEW, .DescriptorCount = 1 },
+						RHI::RootDescriptorTableRange{.RangeType = RHI::DescriptorRangeType::SHADER_RESOURCE_VIEW_TEXTURE, .DescriptorCount = 6 },
+						RHI::RootDescriptorTableRange{.RangeType = RHI::DescriptorRangeType::UNORDERED_ACCESS_VIEW_TEXTURE, .DescriptorCount = 4 }
+					}
+			}
+		});
+		root_signature_description.StaticSamplers.push_back({});
+
+		RHI::RootSignature global_root_signature = root_signature_manager.CreateOrGetRootSignature(root_signature_description);
+
+
+
+		RHI::RayTracingPipelineStateDescription pipeline_description;
+		pipeline_description.ShaderLibraries.emplace_back(shader_library);
+		pipeline_description.HitGroups.emplace_back(hit_group);
+		pipeline_description.GlobalRootSignature = global_root_signature;
+		pipeline_description.LocalRootSignatures;
+		pipeline_description.ExportAssociations.emplace_back(export_association1);
+		pipeline_description.ShaderConfiguration.MaxAttributeSizeInBytes = 2 * sizeof(float);
+		pipeline_description.ShaderConfiguration.MaxPayloadSizeInBytes = 27 * sizeof(float);
+		pipeline_description.MaxTraceRecursionDepth = 3;
+
+		RHI::IRayTracingPipeline* pso = pipeline_state_manager.CreateOrGetRayTracingPipelineState(pipeline_description);
+
+
+		sbt_buffer->Map();
+		void* RayGen = pso->GetShaderIdentifier("RayGen");
+		sbt_buffer->CopyData(0, RayGen, 32);
+
+		void* Miss = pso->GetShaderIdentifier("Miss");
+		sbt_buffer->CopyData(64, Miss, 32);
+
+		void* HitGroup = pso->GetShaderIdentifier("HitGroup");
+		sbt_buffer->CopyData(128, HitGroup, 32);
+
+		AT::FrameGraphRenderPassIO io;
+		io.AddShaderResource(base_color_texture);
+		io.AddShaderResource(normal_texture);
+		io.AddShaderResource(surface_texture);
+		io.AddShaderResource(depth_texture);
+		io.AddUnorderedAccessWrite(reservoir_output);
+		io.AddUnorderedAccessWrite(reservoir_output1);
+		io.AddUnorderedAccessWrite(reservoir_output2);
+		io.AddUnorderedAccessWrite(reservoir_output3);
+
+		RHI::DescriptorTable table;
+		RHI::Device device = graph_builder.GetDevice();
+		graph_builder.AllocateDescriptorTable(global_root_signature, 0, table);
+
+		struct GlobalConstants {
+			DirectX::XMFLOAT4X4 InverseViewProjectionMatrix;
+			DirectX::XMFLOAT4X4 PreviousViewProjectionMatrix;
+			DirectX::XMFLOAT4 CameraPosition;
+			uint32_t FrameNumber;
+		} constants;
+
+		DirectX::XMStoreFloat4x4(&constants.InverseViewProjectionMatrix, render_data.InverseViewProjectionMatrix);
+		DirectX::XMStoreFloat4x4(&constants.PreviousViewProjectionMatrix, render_data.PreviousViewProjectionMatrix);
+		DirectX::XMStoreFloat4(&constants.CameraPosition, render_data.CameraPosition);
+		constants.FrameNumber = render_data.FrameNumber;
+		GPUConstantBuffer* cbuffer = graph_builder.AllocateConstantBuffer<GlobalConstants>();
+		cbuffer->WriteData(constants);
+
+		//Upload Materials.
+
+		graph_builder.AddRenderPass(name, io, AT::FrameGraphRenderPass::PIPELINE_TYPE::GRAPHICS, [=](RHI::CommandList command_list) {
+			command_list->SetComputeRootSignature(global_root_signature);
+			command_list->SetRayTracingPipeline(pso);
+			command_list->SetComputeRootDescriptorTable(0, table);
+			RHI::RayTracingDispatchRaysDescription dispatch_ray_description;
+			dispatch_ray_description.Width = 1280;
+			dispatch_ray_description.Height = 720;
+			dispatch_ray_description.Depth = 1;
+			dispatch_ray_description.RayGenerationShaderRecord = { .Buffer = sbt_buffer, .Offset = 0, .Size = 32 };
+			dispatch_ray_description.MissShaderTable = { .Buffer = sbt_buffer, .Offset = 64, .Size = 32, .Stride = 32 };
+			dispatch_ray_description.HitGroupTable = { .Buffer = sbt_buffer, .Offset = 128, .Size = 32, .Stride = 32 };
+			device->WriteDescriptorTable(table, 0, 1, &cbuffer->GetNative());
+			device->WriteDescriptorTable(table, 1, 1, &scene_srv);
+			device->WriteDescriptorTable(table, 2, 1, &base_color_texture->RHIHandle);
+			device->WriteDescriptorTable(table, 3, 1, &normal_texture->RHIHandle);
+			device->WriteDescriptorTable(table, 4, 1, &surface_texture->RHIHandle);
+			device->WriteDescriptorTable(table, 5, 1, &depth_texture->RHIHandle);
+			device->WriteDescriptorTable(table, 6, 1, &instance_info_buffer);
+			device->WriteDescriptorTable(table, 7, 1, &io.m_UnorderedAccessViewWrite[0]->RHIHandle);
+			device->WriteDescriptorTable(table, 8, 1, &io.m_UnorderedAccessViewWrite[1]->RHIHandle);
+			device->WriteDescriptorTable(table, 9, 1, &io.m_UnorderedAccessViewWrite[2]->RHIHandle);
+			device->WriteDescriptorTable(table, 10, 1, &io.m_UnorderedAccessViewWrite[3]->RHIHandle);
+			command_list->DispatchRays(dispatch_ray_description);
+		});
+	}
+
+
+	inline void ReSTIR_GI_TemporalSampling(
+		const std::string& name,
+		AT::FrameGraphBuilder& graph_builder,
+		AT::GPUShaderManager& shader_manager,
+		AT::GPUPipelineStateManager& pipeline_state_manager,
+		AT::GPURootSignatureManager& root_signature_manager,
+		uint32_t width,
+		uint32_t height,
+		RenderData& render_data,
+		RHI::Buffer sbt_buffer,
+		RHI::ShaderResourceView instance_info_buffer,
+		AT::FrameGraphSRVRef base_color_texture,
+		AT::FrameGraphSRVRef normal_texture,
+		AT::FrameGraphSRVRef surface_texture,
+		AT::FrameGraphSRVRef depth_texture,
+		AT::FrameGraphUAVRef reservoir_output,
+		AT::FrameGraphUAVRef reservoir_output1,
+		AT::FrameGraphUAVRef reservoir_output2,
+		AT::FrameGraphUAVRef reservoir_output3,
+
+		AT::FrameGraphUAVRef current_reservoir_output,
+		AT::FrameGraphUAVRef current_reservoir_output1,
+		AT::FrameGraphUAVRef current_reservoir_output2,
+		AT::FrameGraphUAVRef current_reservoir_output3,
+
+		AT::FrameGraphUAVRef previous_reservoir_output,
+		AT::FrameGraphUAVRef previous_reservoir_output1,
+		AT::FrameGraphUAVRef previous_reservoir_output2,
+		AT::FrameGraphUAVRef previous_reservoir_output3
+	) {
+		RHI::Shader shader = shader_manager.LoadRHIShader("ReSTIR_GI_TemporalSampling", RHI::ShaderType::LIBRARY);
+		RHI::RayTracingShaderLibrary shader_library;
+		shader_library.SetLibrary(shader);
+		shader_library.DefineExport("RayGen");
+		shader_library.DefineExport("ClosestHit");
+		shader_library.DefineExport("Miss");
+
+		RHI::RayTracingHitGroup hit_group;
+		hit_group.Name = "HitGroup";
+		hit_group.Type = RHI::RayTracingHitGroupType::TRIANGLES;
+		hit_group.AnyHitShaderImport;
+		hit_group.ClosestHitShaderImport = "ClosestHit";
+		hit_group.IntersectionShaderImport;
+
+		RHI::RayTracingExportAssociation export_association1;
+		export_association1.Type = RHI::RayTracingExportAssociationType::SHADER_PAYLOAD;
+		export_association1.ExportNames.push_back("HitGroup");
+		export_association1.AssociationObjectIndex = 0;
+
+		RHI::RootSignatureDescription root_signature_description;
+		root_signature_description.Parameters.push_back(RHI::RootParameter{
+			.RootParameterType = RHI::RootParameterType::DESCRIPTOR_TABLE,
+				.RootDescriptorTable = RHI::RootDescriptorTable{
+					.Ranges = {
+						RHI::RootDescriptorTableRange{.RangeType = RHI::DescriptorRangeType::CONSTANT_BUFFER_VIEW, .DescriptorCount = 1 },
+						RHI::RootDescriptorTableRange{.RangeType = RHI::DescriptorRangeType::SHADER_RESOURCE_VIEW_TEXTURE, .DescriptorCount = 6 },
+						RHI::RootDescriptorTableRange{.RangeType = RHI::DescriptorRangeType::UNORDERED_ACCESS_VIEW_TEXTURE, .DescriptorCount = 12 }
+					}
+			}
+		});
+		root_signature_description.StaticSamplers.push_back({});
+
+		RHI::RootSignature global_root_signature = root_signature_manager.CreateOrGetRootSignature(root_signature_description);
+
+
+
+		RHI::RayTracingPipelineStateDescription pipeline_description;
+		pipeline_description.ShaderLibraries.emplace_back(shader_library);
+		pipeline_description.HitGroups.emplace_back(hit_group);
+		pipeline_description.GlobalRootSignature = global_root_signature;
+		pipeline_description.LocalRootSignatures;
+		pipeline_description.ExportAssociations.emplace_back(export_association1);
+		pipeline_description.ShaderConfiguration.MaxAttributeSizeInBytes = 2 * sizeof(float);
+		pipeline_description.ShaderConfiguration.MaxPayloadSizeInBytes = 27 * sizeof(float);
+		pipeline_description.MaxTraceRecursionDepth = 3;
+
+		RHI::IRayTracingPipeline* pso = pipeline_state_manager.CreateOrGetRayTracingPipelineState(pipeline_description);
+
+
+		sbt_buffer->Map();
+		void* RayGen = pso->GetShaderIdentifier("RayGen");
+		sbt_buffer->CopyData(0, RayGen, 32);
+
+		void* Miss = pso->GetShaderIdentifier("Miss");
+		sbt_buffer->CopyData(64, Miss, 32);
+
+		void* HitGroup = pso->GetShaderIdentifier("HitGroup");
+		sbt_buffer->CopyData(128, HitGroup, 32);
+
+		AT::FrameGraphRenderPassIO io;
+		io.AddShaderResource(base_color_texture);
+		io.AddShaderResource(normal_texture);
+		io.AddShaderResource(surface_texture);
+		io.AddShaderResource(depth_texture);
+
+		io.AddUnorderedAccessWrite(reservoir_output);
+		io.AddUnorderedAccessWrite(reservoir_output1);
+		io.AddUnorderedAccessWrite(reservoir_output2);
+		io.AddUnorderedAccessWrite(reservoir_output3);
+
+		io.AddUnorderedAccessRead(current_reservoir_output);
+		io.AddUnorderedAccessRead(current_reservoir_output1);
+		io.AddUnorderedAccessRead(current_reservoir_output2);
+		io.AddUnorderedAccessRead(current_reservoir_output3);
+
+		RHI::DescriptorTable table;
+		RHI::Device device = graph_builder.GetDevice();
+		graph_builder.AllocateDescriptorTable(global_root_signature, 0, table);
+
+		struct GlobalConstants {
+			DirectX::XMFLOAT4X4 InverseViewProjectionMatrix;
+			DirectX::XMFLOAT4X4 PreviousViewProjectionMatrix;
+			DirectX::XMFLOAT4 CameraPosition;
+			uint32_t FrameNumber;
+		} constants;
+
+		DirectX::XMStoreFloat4x4(&constants.InverseViewProjectionMatrix, render_data.InverseViewProjectionMatrix);
+		DirectX::XMStoreFloat4x4(&constants.PreviousViewProjectionMatrix, render_data.PreviousViewProjectionMatrix);
+		DirectX::XMStoreFloat4(&constants.CameraPosition, render_data.CameraPosition);
+		constants.FrameNumber = render_data.FrameNumber;
+		GPUConstantBuffer* cbuffer = graph_builder.AllocateConstantBuffer<GlobalConstants>();
+		cbuffer->WriteData(constants);
+
+		//Upload Materials.
+
+		graph_builder.AddRenderPass(name, io, AT::FrameGraphRenderPass::PIPELINE_TYPE::GRAPHICS, [=](RHI::CommandList command_list) {
+			command_list->SetComputeRootSignature(global_root_signature);
+			command_list->SetRayTracingPipeline(pso);
+			command_list->SetComputeRootDescriptorTable(0, table);
+			RHI::RayTracingDispatchRaysDescription dispatch_ray_description;
+			dispatch_ray_description.Width = 1280;
+			dispatch_ray_description.Height = 720;
+			dispatch_ray_description.Depth = 1;
+			dispatch_ray_description.RayGenerationShaderRecord = { .Buffer = sbt_buffer, .Offset = 0, .Size = 32 };
+			dispatch_ray_description.MissShaderTable = { .Buffer = sbt_buffer, .Offset = 64, .Size = 32, .Stride = 32 };
+			dispatch_ray_description.HitGroupTable = { .Buffer = sbt_buffer, .Offset = 128, .Size = 32, .Stride = 32 };
+			device->WriteDescriptorTable(table, 0, 1, &cbuffer->GetNative());
+			device->WriteDescriptorTable(table, 1, 1, &scene_srv);
+			device->WriteDescriptorTable(table, 2, 1, &base_color_texture->RHIHandle);
+			device->WriteDescriptorTable(table, 3, 1, &normal_texture->RHIHandle);
+			device->WriteDescriptorTable(table, 4, 1, &surface_texture->RHIHandle);
+			device->WriteDescriptorTable(table, 5, 1, &depth_texture->RHIHandle);
+			device->WriteDescriptorTable(table, 6, 1, &instance_info_buffer);
+			device->WriteDescriptorTable(table, 7, 1, &io.m_UnorderedAccessViewWrite[0]->RHIHandle);
+			device->WriteDescriptorTable(table, 8, 1, &io.m_UnorderedAccessViewWrite[1]->RHIHandle);
+			device->WriteDescriptorTable(table, 9, 1, &io.m_UnorderedAccessViewWrite[2]->RHIHandle);
+			device->WriteDescriptorTable(table, 10, 1, &io.m_UnorderedAccessViewWrite[3]->RHIHandle);
+			device->WriteDescriptorTable(table, 11, 1, &current_reservoir_output->RHIHandle);
+			device->WriteDescriptorTable(table, 12, 1, &current_reservoir_output1->RHIHandle);
+			device->WriteDescriptorTable(table, 13, 1, &current_reservoir_output2->RHIHandle);
+			device->WriteDescriptorTable(table, 14, 1, &current_reservoir_output3->RHIHandle);
+			
+			device->WriteDescriptorTable(table, 15, 1, &previous_reservoir_output->RHIHandle);
+			device->WriteDescriptorTable(table, 16, 1, &previous_reservoir_output1->RHIHandle);
+			device->WriteDescriptorTable(table, 17, 1, &previous_reservoir_output2->RHIHandle);
+			device->WriteDescriptorTable(table, 18, 1, &previous_reservoir_output3->RHIHandle);
+			
+			command_list->DispatchRays(dispatch_ray_description);
+		});
+	}
+
+	inline void ReSTIR_GI_SpatialSampling(
+		const std::string& name,
+		AT::FrameGraphBuilder& graph_builder,
+		AT::GPUShaderManager& shader_manager,
+		AT::GPUPipelineStateManager& pipeline_state_manager,
+		AT::GPURootSignatureManager& root_signature_manager,
+		uint32_t width,
+		uint32_t height,
+		RenderData& render_data,
+		RHI::Buffer sbt_buffer,
+		RHI::ShaderResourceView instance_info_buffer,
+		AT::FrameGraphSRVRef base_color_texture,
+		AT::FrameGraphSRVRef normal_texture,
+		AT::FrameGraphSRVRef surface_texture,
+		AT::FrameGraphSRVRef depth_texture,
+
+		AT::FrameGraphUAVRef reservoir_output,
+		AT::FrameGraphUAVRef reservoir_output1,
+		AT::FrameGraphUAVRef reservoir_output2,
+		AT::FrameGraphUAVRef reservoir_output3,
+
+		AT::FrameGraphUAVRef save_reservoir_output,
+		AT::FrameGraphUAVRef save_reservoir_output1,
+		AT::FrameGraphUAVRef save_reservoir_output2,
+		AT::FrameGraphUAVRef save_reservoir_output3
+	) {
+		RHI::Shader shader = shader_manager.LoadRHIShader("ReSTIR_GI_SpatialSampling", RHI::ShaderType::LIBRARY);
+		RHI::RayTracingShaderLibrary shader_library;
+		shader_library.SetLibrary(shader);
+		shader_library.DefineExport("RayGen");
+		shader_library.DefineExport("ClosestHit");
+		shader_library.DefineExport("Miss");
+
+		RHI::RayTracingHitGroup hit_group;
+		hit_group.Name = "HitGroup";
+		hit_group.Type = RHI::RayTracingHitGroupType::TRIANGLES;
+		hit_group.AnyHitShaderImport;
+		hit_group.ClosestHitShaderImport = "ClosestHit";
+		hit_group.IntersectionShaderImport;
+
+		RHI::RayTracingExportAssociation export_association1;
+		export_association1.Type = RHI::RayTracingExportAssociationType::SHADER_PAYLOAD;
+		export_association1.ExportNames.push_back("HitGroup");
+		export_association1.AssociationObjectIndex = 0;
+
+		RHI::RootSignatureDescription root_signature_description;
+		root_signature_description.Parameters.push_back(RHI::RootParameter{
+			.RootParameterType = RHI::RootParameterType::DESCRIPTOR_TABLE,
+				.RootDescriptorTable = RHI::RootDescriptorTable{
+					.Ranges = {
+						RHI::RootDescriptorTableRange{.RangeType = RHI::DescriptorRangeType::CONSTANT_BUFFER_VIEW, .DescriptorCount = 1 },
+						RHI::RootDescriptorTableRange{.RangeType = RHI::DescriptorRangeType::SHADER_RESOURCE_VIEW_TEXTURE, .DescriptorCount = 6 },
+						RHI::RootDescriptorTableRange{.RangeType = RHI::DescriptorRangeType::UNORDERED_ACCESS_VIEW_TEXTURE, .DescriptorCount = 8 }
+					}
+			}
+		});
+		root_signature_description.StaticSamplers.push_back({});
+
+		RHI::RootSignature global_root_signature = root_signature_manager.CreateOrGetRootSignature(root_signature_description);
+
+
+
+		RHI::RayTracingPipelineStateDescription pipeline_description;
+		pipeline_description.ShaderLibraries.emplace_back(shader_library);
+		pipeline_description.HitGroups.emplace_back(hit_group);
+		pipeline_description.GlobalRootSignature = global_root_signature;
+		pipeline_description.LocalRootSignatures;
+		pipeline_description.ExportAssociations.emplace_back(export_association1);
+		pipeline_description.ShaderConfiguration.MaxAttributeSizeInBytes = 2 * sizeof(float);
+		pipeline_description.ShaderConfiguration.MaxPayloadSizeInBytes = 27 * sizeof(float);
+		pipeline_description.MaxTraceRecursionDepth = 3;
+
+		RHI::IRayTracingPipeline* pso = pipeline_state_manager.CreateOrGetRayTracingPipelineState(pipeline_description);
+
+
+		sbt_buffer->Map();
+		void* RayGen = pso->GetShaderIdentifier("RayGen");
+		sbt_buffer->CopyData(0, RayGen, 32);
+
+		void* Miss = pso->GetShaderIdentifier("Miss");
+		sbt_buffer->CopyData(64, Miss, 32);
+
+		void* HitGroup = pso->GetShaderIdentifier("HitGroup");
+		sbt_buffer->CopyData(128, HitGroup, 32);
+
+		AT::FrameGraphRenderPassIO io;
+		io.AddShaderResource(base_color_texture);
+		io.AddShaderResource(normal_texture);
+		io.AddShaderResource(surface_texture);
+		io.AddShaderResource(depth_texture);
+		io.AddUnorderedAccessWrite(reservoir_output);
+		io.AddUnorderedAccessWrite(reservoir_output1);
+		io.AddUnorderedAccessWrite(reservoir_output2);
+		io.AddUnorderedAccessWrite(reservoir_output3);
+		io.AddUnorderedAccessRead(save_reservoir_output);
+		io.AddUnorderedAccessRead(save_reservoir_output1);
+		io.AddUnorderedAccessRead(save_reservoir_output2);
+		io.AddUnorderedAccessRead(save_reservoir_output3);
+
+		RHI::DescriptorTable table;
+		RHI::Device device = graph_builder.GetDevice();
+		graph_builder.AllocateDescriptorTable(global_root_signature, 0, table);
+
+		struct GlobalConstants {
+			DirectX::XMFLOAT4X4 InverseViewProjectionMatrix;
+			DirectX::XMFLOAT4X4 PreviousViewProjectionMatrix;
+			DirectX::XMFLOAT4 CameraPosition;
+			uint32_t FrameNumber;
+		} constants;
+
+		DirectX::XMStoreFloat4x4(&constants.InverseViewProjectionMatrix, render_data.InverseViewProjectionMatrix);
+		DirectX::XMStoreFloat4x4(&constants.PreviousViewProjectionMatrix, render_data.PreviousViewProjectionMatrix);
+		DirectX::XMStoreFloat4(&constants.CameraPosition, render_data.CameraPosition);
+		constants.FrameNumber = render_data.FrameNumber;
+		GPUConstantBuffer* cbuffer = graph_builder.AllocateConstantBuffer<GlobalConstants>();
+		cbuffer->WriteData(constants);
+
+		//Upload Materials.
+
+		graph_builder.AddRenderPass(name, io, AT::FrameGraphRenderPass::PIPELINE_TYPE::GRAPHICS, [=](RHI::CommandList command_list) {
+			command_list->SetComputeRootSignature(global_root_signature);
+			command_list->SetRayTracingPipeline(pso);
+			command_list->SetComputeRootDescriptorTable(0, table);
+			RHI::RayTracingDispatchRaysDescription dispatch_ray_description;
+			dispatch_ray_description.Width = 1280;
+			dispatch_ray_description.Height = 720;
+			dispatch_ray_description.Depth = 1;
+			dispatch_ray_description.RayGenerationShaderRecord = { .Buffer = sbt_buffer, .Offset = 0, .Size = 32 };
+			dispatch_ray_description.MissShaderTable = { .Buffer = sbt_buffer, .Offset = 64, .Size = 32, .Stride = 32 };
+			dispatch_ray_description.HitGroupTable = { .Buffer = sbt_buffer, .Offset = 128, .Size = 32, .Stride = 32 };
+			device->WriteDescriptorTable(table, 0, 1, &cbuffer->GetNative());
+			device->WriteDescriptorTable(table, 1, 1, &scene_srv);
+			device->WriteDescriptorTable(table, 2, 1, &base_color_texture->RHIHandle);
+			device->WriteDescriptorTable(table, 3, 1, &normal_texture->RHIHandle);
+			device->WriteDescriptorTable(table, 4, 1, &surface_texture->RHIHandle);
+			device->WriteDescriptorTable(table, 5, 1, &depth_texture->RHIHandle);
+			device->WriteDescriptorTable(table, 6, 1, &instance_info_buffer);
+			device->WriteDescriptorTable(table, 7, 1, &reservoir_output->RHIHandle);
+			device->WriteDescriptorTable(table, 8, 1, &reservoir_output1->RHIHandle);
+			device->WriteDescriptorTable(table, 9, 1, &reservoir_output2->RHIHandle);
+			device->WriteDescriptorTable(table, 10, 1, &reservoir_output3->RHIHandle);
+
+			device->WriteDescriptorTable(table, 11, 1, &save_reservoir_output->RHIHandle);
+			device->WriteDescriptorTable(table, 12, 1, &save_reservoir_output1->RHIHandle);
+			device->WriteDescriptorTable(table, 13, 1, &save_reservoir_output2->RHIHandle);
+			device->WriteDescriptorTable(table, 14, 1, &save_reservoir_output3->RHIHandle);
+
+			command_list->DispatchRays(dispatch_ray_description);
+			});
+	}
+
+
+	inline void ReSTIR_GI_FinalShading(
+		const std::string& name,
+		AT::FrameGraphBuilder& graph_builder,
+		AT::GPUShaderManager& shader_manager,
+		AT::GPUPipelineStateManager& pipeline_state_manager,
+		AT::GPURootSignatureManager& root_signature_manager,
+		uint32_t width,
+		uint32_t height,
+		RenderData& render_data,
+		RHI::Buffer sbt_buffer,
+		RHI::ShaderResourceView instance_info_buffer,
+		AT::FrameGraphSRVRef base_color_texture,
+		AT::FrameGraphSRVRef normal_texture,
+		AT::FrameGraphSRVRef surface_texture,
+		AT::FrameGraphSRVRef depth_texture,
+		AT::FrameGraphUAVRef output,
+			
+		AT::FrameGraphUAVRef reservoir_output,
+		AT::FrameGraphUAVRef reservoir_output1,
+		AT::FrameGraphUAVRef reservoir_output2,
+		AT::FrameGraphUAVRef reservoir_output3,
+
+		AT::FrameGraphUAVRef save_reservoir_output,
+		AT::FrameGraphUAVRef save_reservoir_output1,
+		AT::FrameGraphUAVRef save_reservoir_output2,
+		AT::FrameGraphUAVRef save_reservoir_output3
+	) {
+		RHI::Shader shader = shader_manager.LoadRHIShader("ReSTIR_GI_FinalShading", RHI::ShaderType::LIBRARY);
+		RHI::RayTracingShaderLibrary shader_library;
+		shader_library.SetLibrary(shader);
+		shader_library.DefineExport("RayGen");
+		shader_library.DefineExport("ClosestHit");
+		shader_library.DefineExport("Miss");
+
+		RHI::RayTracingHitGroup hit_group;
+		hit_group.Name = "HitGroup";
+		hit_group.Type = RHI::RayTracingHitGroupType::TRIANGLES;
+		hit_group.AnyHitShaderImport;
+		hit_group.ClosestHitShaderImport = "ClosestHit";
+		hit_group.IntersectionShaderImport;
+
+		RHI::RayTracingExportAssociation export_association1;
+		export_association1.Type = RHI::RayTracingExportAssociationType::SHADER_PAYLOAD;
+		export_association1.ExportNames.push_back("HitGroup");
+		export_association1.AssociationObjectIndex = 0;
+
+		RHI::RootSignatureDescription root_signature_description;
+		root_signature_description.Parameters.push_back(RHI::RootParameter{
+			.RootParameterType = RHI::RootParameterType::DESCRIPTOR_TABLE,
+				.RootDescriptorTable = RHI::RootDescriptorTable{
+					.Ranges = {
+						RHI::RootDescriptorTableRange{.RangeType = RHI::DescriptorRangeType::CONSTANT_BUFFER_VIEW, .DescriptorCount = 1 },
+						RHI::RootDescriptorTableRange{.RangeType = RHI::DescriptorRangeType::SHADER_RESOURCE_VIEW_TEXTURE, .DescriptorCount = 6 },
+						RHI::RootDescriptorTableRange{.RangeType = RHI::DescriptorRangeType::UNORDERED_ACCESS_VIEW_TEXTURE, .DescriptorCount = 9 }
+					}
+			}
+		});
+		root_signature_description.StaticSamplers.push_back({});
+
+		RHI::RootSignature global_root_signature = root_signature_manager.CreateOrGetRootSignature(root_signature_description);
+
+
+
+		RHI::RayTracingPipelineStateDescription pipeline_description;
+		pipeline_description.ShaderLibraries.emplace_back(shader_library);
+		pipeline_description.HitGroups.emplace_back(hit_group);
+		pipeline_description.GlobalRootSignature = global_root_signature;
+		pipeline_description.LocalRootSignatures;
+		pipeline_description.ExportAssociations.emplace_back(export_association1);
+		pipeline_description.ShaderConfiguration.MaxAttributeSizeInBytes = 2 * sizeof(float);
+		pipeline_description.ShaderConfiguration.MaxPayloadSizeInBytes = 27 * sizeof(float);
+		pipeline_description.MaxTraceRecursionDepth = 3;
+
+		RHI::IRayTracingPipeline* pso = pipeline_state_manager.CreateOrGetRayTracingPipelineState(pipeline_description);
+
+
+		sbt_buffer->Map();
+		void* RayGen = pso->GetShaderIdentifier("RayGen");
+		sbt_buffer->CopyData(0, RayGen, 32);
+
+		void* Miss = pso->GetShaderIdentifier("Miss");
+		sbt_buffer->CopyData(64, Miss, 32);
+
+		void* HitGroup = pso->GetShaderIdentifier("HitGroup");
+		sbt_buffer->CopyData(128, HitGroup, 32);
+
+		AT::FrameGraphRenderPassIO io;
+		io.AddShaderResource(base_color_texture);
+		io.AddShaderResource(normal_texture);
+		io.AddShaderResource(surface_texture);
+		io.AddShaderResource(depth_texture);
+		io.AddUnorderedAccessWrite(output);
+		io.AddUnorderedAccessRead(reservoir_output);
+		io.AddUnorderedAccessRead(reservoir_output1);
+		io.AddUnorderedAccessRead(reservoir_output2);
+		io.AddUnorderedAccessRead(reservoir_output3);
+
+		RHI::DescriptorTable table;
+		RHI::Device device = graph_builder.GetDevice();
+		graph_builder.AllocateDescriptorTable(global_root_signature, 0, table);
+
+		struct GlobalConstants {
+			DirectX::XMFLOAT4X4 InverseViewProjectionMatrix;
+			DirectX::XMFLOAT4X4 PreviousViewProjectionMatrix;
+			DirectX::XMFLOAT4 CameraPosition;
+			uint32_t FrameNumber;
+		} constants;
+
+		DirectX::XMStoreFloat4x4(&constants.InverseViewProjectionMatrix, render_data.InverseViewProjectionMatrix);
+		DirectX::XMStoreFloat4x4(&constants.PreviousViewProjectionMatrix, render_data.PreviousViewProjectionMatrix);
+		DirectX::XMStoreFloat4(&constants.CameraPosition, render_data.CameraPosition);
+		constants.FrameNumber = render_data.FrameNumber;
+		GPUConstantBuffer* cbuffer = graph_builder.AllocateConstantBuffer<GlobalConstants>();
+		cbuffer->WriteData(constants);
+
+		//Upload Materials.
+
+		graph_builder.AddRenderPass(name, io, AT::FrameGraphRenderPass::PIPELINE_TYPE::GRAPHICS, [=](RHI::CommandList command_list) {
+			command_list->SetComputeRootSignature(global_root_signature);
+			command_list->SetRayTracingPipeline(pso);
+			command_list->SetComputeRootDescriptorTable(0, table);
+			RHI::RayTracingDispatchRaysDescription dispatch_ray_description;
+			dispatch_ray_description.Width = 1280;
+			dispatch_ray_description.Height = 720;
+			dispatch_ray_description.Depth = 1;
+			dispatch_ray_description.RayGenerationShaderRecord = { .Buffer = sbt_buffer, .Offset = 0, .Size = 32 };
+			dispatch_ray_description.MissShaderTable = { .Buffer = sbt_buffer, .Offset = 64, .Size = 32, .Stride = 32 };
+			dispatch_ray_description.HitGroupTable = { .Buffer = sbt_buffer, .Offset = 128, .Size = 32, .Stride = 32 };
+			device->WriteDescriptorTable(table, 0, 1, &cbuffer->GetNative());
+			device->WriteDescriptorTable(table, 1, 1, &scene_srv);
+			device->WriteDescriptorTable(table, 2, 1, &base_color_texture->RHIHandle);
+			device->WriteDescriptorTable(table, 3, 1, &normal_texture->RHIHandle);
+			device->WriteDescriptorTable(table, 4, 1, &surface_texture->RHIHandle);
+			device->WriteDescriptorTable(table, 5, 1, &depth_texture->RHIHandle);
+			device->WriteDescriptorTable(table, 6, 1, &instance_info_buffer);
+			device->WriteDescriptorTable(table, 7, 1, &io.m_UnorderedAccessViewWrite[0]->RHIHandle);
+			device->WriteDescriptorTable(table, 8, 1, &reservoir_output->RHIHandle);
+			device->WriteDescriptorTable(table, 9, 1, &reservoir_output1->RHIHandle);
+			device->WriteDescriptorTable(table, 10, 1, &reservoir_output2->RHIHandle);
+			device->WriteDescriptorTable(table, 11, 1, &reservoir_output3->RHIHandle);
+
+			device->WriteDescriptorTable(table, 12, 1, &save_reservoir_output->RHIHandle);
+			device->WriteDescriptorTable(table, 13, 1, &save_reservoir_output1->RHIHandle);
+			device->WriteDescriptorTable(table, 14, 1, &save_reservoir_output2->RHIHandle);
+			device->WriteDescriptorTable(table, 15, 1, &save_reservoir_output3->RHIHandle);
+
+			command_list->DispatchRays(dispatch_ray_description);
+		});
+	}
+
+
+	//ReSTIR Composite
+	inline void ReSTIRComposite(
+		const std::string& name,
+		AT::FrameGraphBuilder& graph_builder,
+		AT::GPUShaderManager& shader_manager,
+		AT::GPUPipelineStateManager& pipeline_state_manager,
+		AT::GPURootSignatureManager& root_signature_manager,
+		uint32_t width,
+		uint32_t height,
+		RenderData& render_data,
+		FrameGraphSRVRef direct_illumination,
+		FrameGraphSRVRef global_illumination,
+		FrameGraphRTVRef output_texture
+	) {
+		FrameGraphRenderPassIO tone_mapping_io = {};
+		tone_mapping_io.AddShaderResource(direct_illumination);
+		tone_mapping_io.AddShaderResource(global_illumination);
+		tone_mapping_io.AddRenderTarget(output_texture, RHI::RenderPassAttachment::LoadOperation::CLEAR);
+
+		ReSTIRCompositeShader shader = ReSTIRCompositeShader(
+			shader_manager.LoadRHIShader("ReSTIRComposite", RHI::ShaderType::VERTEX),
+			shader_manager.LoadRHIShader("ReSTIRComposite", RHI::ShaderType::PIXEL),
+			root_signature_manager
+		);
+
+		GPUGraphicsPipelineStateBuilder pso_builder;
+		pso_builder.SetRootSignature(shader.GetRootSignature())
+			.SetVertexShader(shader.GetVertexShader())
+			.SetPixelShader(shader.GetPixelShader())
+			.SetPrimitiveTopology(RHI::PrimitiveTopology::TRIANGLE_STRIP)
+			.SetRenderTargetFormats({ output_texture->TextureRef->Description.Format })
+			.SetDepthEnabled(false)
+			.SetCullMode(RHI::CullMode::BACK)
+			.SetFrontCounterClockwise(true)
+			.SetFillMode(RHI::FillMode::SOLID);
+
+		RHI::PipelineState pso = pipeline_state_manager.CreateOrGetGraphicsPipelineState(pso_builder.ToRHIDescription());
+
+		graph_builder.AddRenderPass("ReSTIRComposite", tone_mapping_io, FrameGraphRenderPass::PIPELINE_TYPE::GRAPHICS, [=, &graph_builder](RHI::CommandList command_list) {
+			command_list->SetPipelineState(pso);
+			command_list->SetGraphicsRootSignature(shader.GetRootSignature());
+
+			RHI::Viewport viewport = {};
+			viewport.TopLeftX = 0.0f;
+			viewport.TopLeftY = 0.0f;
+			viewport.Width = width;
+			viewport.Height = height;
+			viewport.MinDepth = 0.0f;
+			viewport.MaxDepth = 1.0f;
+			command_list->SetViewport(viewport);
+
+			RHI::Rect scissor_rect = {};
+			scissor_rect.Top = 0;
+			scissor_rect.Left = 0;
+			scissor_rect.Bottom = height;
+			scissor_rect.Right = width;
+			command_list->SetScissorRect(scissor_rect);
+
+			ReSTIRCompositeShader::Parameters& parameters = graph_builder.AllocateShaderParameters<ReSTIRCompositeShader::Parameters>();
+			parameters.Pass = graph_builder.AllocateShaderParameterGroup<AT::ReSTIRCompositeShader::PassGroup>(shader.GetRootSignature(), 0, 1)[0];
+			parameters.Pass->DirectIllumination.srv = tone_mapping_io.m_ShaderResources[0]->RHIHandle;
+			parameters.Pass->GlobalIllumination.srv = tone_mapping_io.m_ShaderResources[1]->RHIHandle;
+
+			shader.SetParameters(command_list, &parameters);
+
+			command_list->SetPrimitiveTopology(RHI::PrimitiveTopology::TRIANGLE_STRIP);
+			command_list->Draw(4, 1, 0, 0);
 		});
 	}
 }

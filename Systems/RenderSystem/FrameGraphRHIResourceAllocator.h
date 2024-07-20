@@ -4,7 +4,7 @@
 #include "GPUMemoryAllocator.h"
 #include "./FrameGraphResources.h"
 #include "./GPUConstantBuffer.h"
-#define _128_MB_ 134217728 
+#define _128_MB_ 134217728
 #define _DEFAULT_HEAP_SIZE_ _128_MB_
 #define _UPLOAD_HEAP_SIZE_  _128_MB_ 
 
@@ -18,7 +18,7 @@ namespace AT {
 		{
 			RHI::ResourceHeapDescription default_heap_description;
 			default_heap_description.ResourceHeapType = RHI::ResourceHeapType::DEFAULT;
-			default_heap_description.Size = _DEFAULT_HEAP_SIZE_;
+			default_heap_description.Size = _DEFAULT_HEAP_SIZE_ * 4;
 			m_Device->CreateResourceHeap(default_heap_description, m_DefaultHeap);
 			m_DefaultAllocator = GPUMemoryAllocator::LinearAllocator(m_DefaultHeap, default_heap_description.Size);
 
