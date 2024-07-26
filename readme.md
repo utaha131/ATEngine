@@ -43,7 +43,7 @@ ATEngine is a cross-platform real time rendering engine. The goal of this projec
 
 # ScreenShots
 ## Ray Tracing Render Techniques.
-### ReSTIR DI & GI
+### ReSTIR DI & GI Real-Time Path Tracing.
 ![ReSTIR DI & GI Demo](https://raw.githubusercontent.com/utaha131/ATEngine/main/Screenshots/ReSTIR.jpg)
 ## Raster Render Techniques.
 ### DirectX 12 & Vulkan Support

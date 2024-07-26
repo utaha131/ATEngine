@@ -16,7 +16,7 @@ struct PixelIn {
 	float4x4 NormalMatrix;
 };
 
-[[vk::binding(1, 0)]] Texture2D g_BaseColorMap : register(t0);
+[[vk::binding(1, 0)]] Texture2D g_BaseColor : register(t0);
 [[vk::binding(2, 0)]] SamplerState g_Sampler : register(s0);
 
 PixelIn VS(VertexIn input) {
@@ -27,7 +27,7 @@ PixelIn VS(VertexIn input) {
 }
 
 void PS(PixelIn input) {
-	if (g_BaseColorMap.Sample(g_Sampler, input.UV).a <= 0.05f) {
+	if (g_BaseColor.Sample(g_Sampler, input.UV).a <= 0.05f) {
         discard;
     }
 }
